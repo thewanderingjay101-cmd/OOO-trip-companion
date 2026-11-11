@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OOO</title>
+<meta name="apple-mobile-web-app-title" content="OOO">
+<meta name="theme-color" content="#27408B">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-512.png">
+<style>
+  :root { --bg:#F3F5F9; --ink:#18213A; --ink2:#55607A; --accent:#27408B; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0F1424; --ink:#E8ECF6; --ink2:#B5BED6; --accent:#9DB3F5; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system, system-ui, sans-serif; }
+  main { max-width:420px; margin:0 auto; padding:56px 16px; text-align:center; }
+  img { width:96px; height:96px; border-radius:22px; }
+  h1 { font-size:28px; margin:16px 0 4px; }
+  p { color:var(--ink2); margin:8px 0; }
+  ol { text-align:left; color:var(--ink2); padding-left:22px; }
+  a { color:var(--accent); font-weight:600; }
+</style>
+</head>
+<body>
+<main>
+  <img src="apple-touch-icon.png" alt="">
+  <h1>OOO</h1>
+  <div id="msg"><p>Opening your trip…</p></div>
+</main>
+<script>
+  // Launcher for the OOO Trip Companion web app (Apps Script can't set an iPhone Home Screen icon).
+  // ?setup=1 shows Add to Home Screen steps; otherwise forwards straight to the app with the same trip keys.
+  var APP = 'https://script.google.com/macros/s/AKfycbwpoGwMWlE_InveJ3rCfw1H_9yewjGpVEWfT-dUrU4Cd0sDZ38SUswcaOFjjyUA1y16/exec';
+  var q = new URLSearchParams(location.search);
+  var keep = new URLSearchParams();
+  ['ks', 'trip', 'k'].forEach(function (n) { if (q.get(n)) keep.set(n, q.get(n)); });
+  var target = APP + (keep.toString() ? '?' + keep.toString() : '');
+  if (q.get('setup') === '1') {
+    // the saved Home Screen link must not include setup=1, so it opens the app directly
+    history.replaceState(null, '', location.pathname + (keep.toString() ? '?' + keep.toString() : ''));
+    document.getElementById('msg').innerHTML =
+      '<p>Add OOO to your Home Screen:</p><ol><li>Tap the Share button in Safari.</li>' +
+      '<li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>' +
+      '<p>The icon opens every trip you have unlocked. Keep this link to yourself: it works like your PINs.</p>' +
+      '<p><a id="go">Open OOO now</a></p>';
+    document.getElementById('go').href = target;
+  } else {
+    location.replace(target);
+  }
+</script>
+</body>
+</html>
