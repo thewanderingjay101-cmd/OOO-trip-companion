@@ -7,13 +7,15 @@
 <meta name="apple-mobile-web-app-title" content="OOO">
 <meta name="theme-color" content="#27408B">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
 <link rel="icon" type="image/png" href="icon-512.png">
 <style>
   :root { --bg:#F3F5F9; --ink:#18213A; --ink2:#55607A; --accent:#27408B; }
   @media (prefers-color-scheme: dark) { :root { --bg:#0F1424; --ink:#E8ECF6; --ink2:#B5BED6; --accent:#9DB3F5; } }
   body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system, system-ui, sans-serif; }
   main { max-width:420px; margin:0 auto; padding:56px 16px; text-align:center; }
-  img { width:96px; height:96px; border-radius:22px; }
+  .logo { width:96px; height:96px; border-radius:22px; display:block; margin:0 auto; }
   h1 { font-size:28px; margin:16px 0 4px; }
   p { color:var(--ink2); margin:8px 0; }
   ol { text-align:left; color:var(--ink2); padding-left:22px; }
@@ -22,7 +24,8 @@
 </head>
 <body>
 <main>
-  <img src="apple-touch-icon.png" alt="">
+  <!-- drawn inline: an <img> was cut off mid-load by the redirect and showed as a broken "?" box -->
+  <svg class="logo" viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B5BC4"/><stop offset="1" stop-color="#1B2C66"/></linearGradient></defs><rect width="512" height="512" fill="url(#lg)"/><g fill="none" stroke="#fff" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"><path d="M206 168v-26a20 20 0 0 1 20-20h60a20 20 0 0 1 20 20v26"/><rect x="126" y="168" width="260" height="200" rx="34"/><path d="M196 168v200M316 168v200"/></g><circle cx="176" cy="396" r="14" fill="#fff"/><circle cx="336" cy="396" r="14" fill="#fff"/><path transform="translate(330 96) rotate(35)" d="M0 -44 L10 -10 L46 8 L46 20 L10 10 L6 34 L18 44 L18 52 L0 46 L-18 52 L-18 44 L-6 34 L-10 10 L-46 20 L-46 8 L-10 -10 Z" fill="#FFD27A"/></svg>
   <h1>OOO</h1>
   <div id="msg"><p>Opening your trip…</p></div>
 </main>
