@@ -1041,8 +1041,7 @@ function startApp(DATA) {
         '</section>';
       if (B.launcher) {
         h += '<section class="section"><div class="hs-head">' + APP_ICON + '<div><h3>Add OOO to your Home Screen</h3><p>Open your trips from an app icon, no PIN needed.</p></div></div>' +
-          '<ol class="steps"><li><span>Unlock every trip you want first, using <b>Open another trip with its PIN</b> above. One icon opens them all.</span></li>' +
-          '<li><span>Tap <b>Set up the icon</b> below' + (B.pages ? '' : ' (it opens in Safari)') + '.</span></li>' +
+          '<ol class="steps"><li><span>Tap <b>Set up the icon</b> below' + (B.pages ? '' : ' (it opens in Safari)') + '.</span></li>' +
           '<li><span>' + HS_HOW + '</span></li></ol>' +
           '<a class="btn primary" href="' + esc(B.launcher + '?setup=1' + ksq) + '"' + (B.pages ? '' : ' target="_blank" rel="noopener"') + ' style="justify-content:center">Set up the icon</a></section>';
       }
