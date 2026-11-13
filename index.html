@@ -280,10 +280,18 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .bal .bv { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .bal .bv.pos { color: var(--pos); }
 .bal .bv.neg { color: var(--neg); }
-.bal.sh { padding: 7px 0; }
-.bal.sh .bt::before { display: none; }
-.bal .bf.share { left: 0; background: var(--bar); }
-.bal .bn small, .bal .bv small { display: block; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.bfly { display: grid; grid-template-columns: 76px minmax(0, 1fr) 76px; gap: 2px 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.bfly .bn { grid-column: 1 / -1; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; overflow-wrap: anywhere; }
+.bfly .bn small { font-size: 12px; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
+.bfly .pv, .bfly .sv { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.bfly .sv { text-align: right; }
+.bfly .bt { position: relative; height: 10px; }
+.bfly .bt::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line); }
+.bfly .bf { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.bfly .bf.paid { right: 50%; background: var(--accent); }
+.bfly .bf.share { left: 50%; background: var(--bar); }
+.bfly.hd { border-top: 0; padding: 0 0 2px; font-size: 12px; font-weight: 600; color: var(--ink-3); grid-template-columns: 1fr 1fr; }
+.bfly.hd span:last-child { text-align: right; }
 .cat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 6px 0; font-size: 14px; }
 .cat .cb { grid-column: 1 / -1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
 .cat .cb i { display: block; height: 100%; background: var(--bar); border-radius: 4px; }
@@ -1040,7 +1048,7 @@ function startApp(DATA) {
         '<p class="hint"><a href="' + esc(B.url + '?add=1' + ksq) + '" target="_top">Open another trip with its PIN</a></p>' +
         '</section>';
       if (B.launcher) {
-        h += '<section class="section"><div class="hs-head">' + APP_ICON + '<div><h3>Add OOO to your Home Screen</h3><p>Open your trips from an app icon, no PIN needed.</p></div></div>' +
+        h += '<section class="section"><div class="hs-head">' + APP_ICON + '<div><h3>Add OOO to your Home Screen</h3><p>Open your trips from an app icon. Enter your PIN once.</p></div></div>' +
           '<ol class="steps"><li><span>Tap <b>Set up the icon</b> below' + (B.pages ? '' : ' (it opens in Safari)') + '.</span></li>' +
           '<li><span>' + HS_HOW + '</span></li></ol>' +
           '<a class="btn primary" href="' + esc(B.launcher + '?setup=1' + ksq) + '"' + (B.pages ? '' : ' target="_blank" rel="noopener"') + ' style="justify-content:center">Set up the icon</a></section>';
@@ -1088,13 +1096,15 @@ function startApp(DATA) {
     // Balances: each group's or person's share of the costs (bar), and what they paid
     var sh = state.shares === 'people' ? E.by_person : E.by_group;
     sh = (sh || []).filter(function (p) { return p.paid || p.owed; });
-    var maxO = sh.reduce(function (a, p) { return Math.max(a, p.owed); }, 0) || 1;
+    // left half: what they paid; right half: their share. Both on one scale so they compare.
+    var maxV = sh.reduce(function (a, p) { return Math.max(a, p.paid, p.owed); }, 0) || 1;
     var sumO = sh.reduce(function (a, p) { return a + p.owed; }, 0) || 1;
     h += '<section class="section"><h3>Balances</h3>' +
       '<div class="seg" role="group" aria-label="Shares by"><button type="button" data-shares="groups" aria-pressed="' + (state.shares !== 'people') + '">By group</button><button type="button" data-shares="people" aria-pressed="' + (state.shares === 'people') + '">By person</button></div>' +
-      '<p class="hint">Each ' + (state.shares === 'people' ? 'person' : 'group') + '\'s share of the costs, and what they paid.</p><div>' + (sh.length ? sh.map(function (p) {
-        return '<div class="bal sh"><span class="bn">' + esc(p.name) + '<small>paid ' + m(p.paid) + '</small></span><span class="bt"><span class="bf share" style="width:' + (p.owed / maxO * 100).toFixed(1) + '%"></span></span><span class="bv">' + m(p.owed) + '<small>' + Math.round(p.owed / sumO * 100) + '%</small></span></div>';
-      }).join('') : '<p class="hint">Nothing logged yet.</p>') + '</div></section>';
+      (sh.length ? '<div><div class="bfly hd"><span>Paid</span><span>Share</span></div>' + sh.map(function (p) {
+        return '<div class="bfly"><span class="bn">' + esc(p.name) + '<small>' + Math.round(p.owed / sumO * 100) + '% of costs</small></span>' +
+          '<span class="pv">' + m(p.paid) + '</span><span class="bt"><span class="bf paid" style="width:' + (p.paid / maxV * 50).toFixed(1) + '%"></span><span class="bf share" style="width:' + (p.owed / maxV * 50).toFixed(1) + '%"></span></span><span class="sv">' + m(p.owed) + '</span></div>';
+      }).join('') + '</div>' : '<p class="hint">Nothing logged yet.</p>') + '</section>';
 
     var cats = E.by_category.filter(function (c) { return c.total > 0; }).sort(function (a, b) { return b.total - a.total; });
     var maxC = cats.reduce(function (a, c) { return Math.max(a, c.total); }, 0) || 1;
