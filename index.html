@@ -231,7 +231,6 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .todo-item ul li.tb { color: var(--persimmon); font-weight: 600; }
 
 /* trip overview */
-.ov-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; line-height: 1.25; text-wrap: balance; }
 .ov-intro { margin: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink-2); }
 .ov-intro p { margin: 0; }
 .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -248,8 +247,6 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .hs-head p { margin: 2px 0 0; font-size: 13px; color: var(--ink-3); }
 .who-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .who-row .meta { font-weight: 600; }
-.doclinks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.doclinks .btn { justify-content: center; }
 .leg { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
 .leg:first-child { border-top: 0; padding-top: 2px; }
 .leg .lh { display: flex; align-items: center; gap: 8px; font-weight: 600; flex-wrap: wrap; overflow-wrap: anywhere; }
@@ -955,8 +952,6 @@ function startApp(DATA) {
     var n = first && last ? nights(first.date, last.date) : 0;
     var who = ((DATA.expenses && DATA.expenses.by_person) || []).map(function (p) { return p.name; }).filter(Boolean);
     h += '<section class="section"><h3>Overview</h3>';
-    if (P.title) h += '<div class="ov-title">' + esc(P.title) + '</div>';
-    if (first && last) h += '<p class="hint" style="margin:0">' + esc(rangeText(first.date, last.date)) + (META.place ? ' · ' + esc(META.place) : '') + '</p>';
     if ((P.intro || []).length) h += '<div class="ov-intro">' + P.intro.map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') + '</div>';
     h += '<div class="stats">' +
       '<div class="stat"><b>' + days.length + '</b><span>' + (days.length === 1 ? 'day' : 'days') + '</span><span>' + n + (n === 1 ? ' night' : ' nights') + '</span></div>' +
@@ -964,10 +959,7 @@ function startApp(DATA) {
       '<div class="stat"><b>' + (who.length || '–') + '</b><span>travellers</span></div>' +
       '</div>';
     if (who.length) h += '<div class="who-row">' + who.map(function (w) { return '<span class="meta">' + esc(w) + '</span>'; }).join('') + '</div>';
-    h += '<div class="doclinks">' +
-      '<a class="btn primary" href="' + DOC_URL + '" target="_blank" rel="noopener">' + icon('cal', 16) + 'Itinerary doc</a>' +
-      '<a class="btn primary" href="' + SHEET_URL + '" target="_blank" rel="noopener">' + icon('ticket', 16) + 'Expense sheet</a>' +
-      '</div></section>';
+    h += '</section>';
     return h;
   }
   function renderTrip() {
