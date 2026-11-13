@@ -283,18 +283,16 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .bal .bv { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .bal .bv.pos { color: var(--pos); }
 .bal .bv.neg { color: var(--neg); }
+.bal.sh { padding: 7px 0; }
+.bal.sh .bt::before { display: none; }
+.bal .bf.share { left: 0; background: var(--bar); }
+.bal .bn small, .bal .bv small { display: block; font-size: 12px; font-weight: 500; color: var(--ink-3); }
 .cat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 6px 0; font-size: 14px; }
 .cat .cb { grid-column: 1 / -1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
 .cat .cb i { display: block; height: 100%; background: var(--bar); border-radius: 4px; }
 .cat .cv { font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .curbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .curbar .hint { margin: 0; font-size: 13px; color: var(--ink-3); }
-.shr { display: grid; grid-template-columns: minmax(0, 1fr) 84px 84px; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; align-items: baseline; }
-.shr.hd { border-top: 0; padding: 0 0 2px; font-size: 12px; font-weight: 600; color: var(--ink-3); }
-.shr span:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
-.shr.g { font-weight: 700; }
-.shr.m { border-top: 0; padding-top: 0; color: var(--ink-2); }
-.shr.m span:first-child { padding-left: 14px; }
 .foot { font-size: 12px; color: var(--ink-3); text-align: center; padding: 8px 0 0; display: flex; flex-direction: column; gap: 4px; }
 
 /* tab bar */
@@ -1071,22 +1069,16 @@ function startApp(DATA) {
         }).join('') + '</div></details>' : '') + '</section>';
     }
 
-    // Balances: what each group and each person paid, and their share of the costs
-    var people = E.by_person.filter(function (p) { return p.paid || p.owed; });
-    var groups = (E.by_group || []).filter(function (g) { return g.paid || g.owed; });
-    var rows = '<div class="shr hd"><span></span><span>Paid</span><span>Share</span></div>';
-    function shr(p, cls) { return '<div class="shr' + cls + '"><span>' + esc(p.name) + '</span><span>' + m(p.paid) + '</span><span>' + m(p.owed) + '</span></div>'; }
-    if (groups.length) {
-      var shown = {};
-      groups.forEach(function (g) {
-        var mem = people.filter(function (p) { return p.group === g.name; });
-        rows += shr(g, ' g');
-        if (!(mem.length === 1 && mem[0].name === g.name)) mem.forEach(function (p) { rows += shr(p, ' m'); });
-        mem.forEach(function (p) { shown[p.name] = 1; });
-      });
-      people.filter(function (p) { return !shown[p.name]; }).forEach(function (p) { rows += shr(p, ' g'); });
-    } else people.forEach(function (p) { rows += shr(p, ''); });
-    h += '<section class="section"><h3>Balances</h3><p class="hint">What each ' + (groups.length ? 'group and person' : 'person') + ' paid, and their share of the costs.</p><div>' + rows + '</div></section>';
+    // Balances: each group's or person's share of the costs (bar), and what they paid
+    var sh = state.shares === 'people' ? E.by_person : E.by_group;
+    sh = (sh || []).filter(function (p) { return p.paid || p.owed; });
+    var maxO = sh.reduce(function (a, p) { return Math.max(a, p.owed); }, 0) || 1;
+    var sumO = sh.reduce(function (a, p) { return a + p.owed; }, 0) || 1;
+    h += '<section class="section"><h3>Balances</h3>' +
+      '<div class="seg" role="group" aria-label="Shares by"><button type="button" data-shares="groups" aria-pressed="' + (state.shares !== 'people') + '">By group</button><button type="button" data-shares="people" aria-pressed="' + (state.shares === 'people') + '">By person</button></div>' +
+      '<p class="hint">Each ' + (state.shares === 'people' ? 'person' : 'group') + '\'s share of the costs, and what they paid.</p><div>' + (sh.length ? sh.map(function (p) {
+        return '<div class="bal sh"><span class="bn">' + esc(p.name) + '<small>paid ' + m(p.paid) + '</small></span><span class="bt"><span class="bf share" style="width:' + (p.owed / maxO * 100).toFixed(1) + '%"></span></span><span class="bv">' + m(p.owed) + '<small>' + Math.round(p.owed / sumO * 100) + '%</small></span></div>';
+      }).join('') : '<p class="hint">Nothing logged yet.</p>') + '</div></section>';
 
     var cats = E.by_category.filter(function (c) { return c.total > 0; }).sort(function (a, b) { return b.total - a.total; });
     var maxC = cats.reduce(function (a, c) { return Math.max(a, c.total); }, 0) || 1;
@@ -1209,6 +1201,8 @@ function startApp(DATA) {
     if (e.target.closest('[data-ibx-cancel]')) { state.replyTo = 0; render(); return; }
     var s = e.target.closest('[data-settle]');
     if (s) { state.settle = s.getAttribute('data-settle'); store(SK + 'settle', state.settle); render(); return; }
+    var sb = e.target.closest('[data-shares]');
+    if (sb) { state.shares = sb.getAttribute('data-shares'); store(SK + 'shares', state.shares); render(); return; }
     var cb = e.target.closest('[data-cur]');
     if (cb) { state.cur = cb.getAttribute('data-cur'); store(SK + 'cur', state.cur); render(); return; }
   });
@@ -1217,6 +1211,7 @@ function startApp(DATA) {
   state.day = pickDay();
   state.settle = store(SK + 'settle') === 'people' ? 'people' : 'groups';
   state.cur = store(SK + 'cur');
+  state.shares = store(SK + 'shares') === 'people' ? 'people' : 'groups';
   state.me = store(SK + 'me');
   fromHash();
   render();
