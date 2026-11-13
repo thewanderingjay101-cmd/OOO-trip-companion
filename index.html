@@ -994,15 +994,40 @@ function startApp(DATA) {
     }).join('') + '</div></section>';
 
     if (T.car) {
-      var cars = (T.car.notes || []).concat(T.car.lines || []).join(' ').match(/(\d+)\s+cars?\b/i);
-      h += '<section class="section"><h3>Car rental</h3>' + (cars ? '<p class="hint">' + esc(cars[1]) + (+cars[1] === 1 ? ' rental car' : ' rental cars') + ' for the trip</p>' : '') + '<div class="list">' +
-        '<div class="li"><span class="t">Pick up</span><span class="r">' + esc(T.car.weekday + ' ' + T.car.date) + '</span><span class="s">' + esc(T.car.lines.join(' · ')) + '</span></div>' +
-        (T.car['return'] ? '<div class="li"><span class="t">Return</span><span class="r">' + esc(T.car['return']) + '</span></div>' : '') +
-        '</div><details class="more"><summary>Pickup notes</summary><ul class="notes">' + T.car.notes.reduce(function (a, n) {
-          var last = a[a.length - 1];
-          if (last !== undefined && /:$/.test(last.trim()) && !/:$/.test(n.trim())) a[a.length - 1] = last.trim() + ' ' + n; else a.push(n);
-          return a;
-        }, []).map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></details></section>';
+      // Sort the doc's car lines: cars and insurance go on top, the pick-up time beside the date,
+      // the pick-up location under it, everything else into Notes. Works on any trip's wording.
+      // "20 Nov 08:00" -> "Fri 20 Nov · 08:00", like the pick-up line
+      var retText = function (r) {
+        var m = /^(.*?)\s+(\d{1,2}:\d{2}.*)$/.exec(String(r)), lbl = m ? m[1] : String(r);
+        var d = days.filter(function (x) { return x.label === lbl; })[0];
+        return (d ? d.weekday.slice(0, 3) + ' ' : '') + lbl + (m ? ' · ' + m[2] : '');
+      };
+      var C = T.car, models = [], company = '', insurance = '', ptime = '', ploc = '', rest = [];
+      (C.lines || []).forEach(function (l) {
+        var t = String(l).trim(), m;
+        if (!t) return;
+        if ((m = /^pick[\s-]?up\s+time\s*:\s*(.+)$/i.exec(t)) && !ptime) ptime = m[1];
+        else if ((m = /^(?:pick[\s-]?up\s+)?location\s*:\s*(.+)$/i.exec(t)) && !ploc) ploc = m[1];
+        else if (/insurance/i.test(t) && !insurance) insurance = t;
+        else if ((m = /^([^:]+?)\s*[-–—]\s*((?:[$¥€£]|[A-Z]{3}\s?|S\$)\s?[\d,.]+.*)$/.exec(t))) models.push({ name: m[1], price: m[2] });
+        else if (/(car\s+rental|rent[\s-]?a[\s-]?car|car\s+hire|rentals?)$/i.test(t) && !/[:\-–]/.test(t) && !company) company = t;
+        else rest.push(t);
+      });
+      if (!insurance) (C.notes || []).some(function (n) { if (/insurance/i.test(n)) { insurance = String(n).trim(); return true; } return false; });
+      var nm = (C.notes || []).concat(C.lines || []).join(' ').match(/(\d+)\s+cars?\b/i);
+      var nCars = models.length || (nm ? +nm[1] : 0);
+      var notes = rest.concat(C.notes || []).reduce(function (a, n) {
+        var last = a[a.length - 1];
+        if (last !== undefined && /:$/.test(last.trim()) && !/:$/.test(n.trim())) a[a.length - 1] = last.trim() + ' ' + n; else a.push(n);
+        return a;
+      }, []);
+      h += '<section class="section"><h3>Car rental</h3><div class="list">' +
+        (nCars || models.length || company ? '<div class="li"><span class="t">' + (nCars ? nCars + (nCars === 1 ? ' car' : ' cars') : 'Car') + '</span><span class="r">' + esc(company) + '</span>' +
+          (models.length ? '<span class="s">' + models.map(function (x) { return esc(x.name) + ' <span style="color:var(--ink-3)">' + esc(x.price) + '</span>'; }).join(' · ') + '</span>' : '') + '</div>' : '') +
+        (insurance ? '<div class="li"><span class="t">Insurance</span><span class="s">' + esc(insurance) + '</span></div>' : '') +
+        '<div class="li"><span class="t">Pick up</span><span class="r">' + esc(C.weekday + ' ' + C.date) + (ptime || C.time ? ' · ' + esc(ptime || C.time) : '') + '</span>' + (ploc ? '<span class="s">' + esc(ploc) + '</span>' : '') + '</div>' +
+        (C['return'] ? '<div class="li"><span class="t">Return</span><span class="r">' + esc(retText(C['return'])) + '</span></div>' : '') +
+        '</div>' + (notes.length ? '<details class="more"><summary>Notes</summary><ul class="notes">' + notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></details>' : '') + '</section>';
     }
 
     var B = DATA.boot;
