@@ -280,9 +280,9 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .bal .bv { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .bal .bv.pos { color: var(--pos); }
 .bal .bv.neg { color: var(--neg); }
-.bfly { display: grid; grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1fr); align-items: center; padding: 5px 0; font-size: 14px; }
-.bfly .bn { font-weight: 600; overflow-wrap: anywhere; line-height: 1.2; padding-right: 8px; }
-.bfly .half { display: flex; align-items: center; gap: 6px; min-width: 0; height: 24px; }
+.bfly { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 4px 0; padding: 6px 0; font-size: 14px; }
+.bfly .bn { grid-column: 1 / -1; font-weight: 600; font-size: 14px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bfly .half { display: flex; align-items: center; gap: 6px; min-width: 0; height: 22px; }
 .bfly .half.paid { flex-direction: row-reverse; border-right: 1px solid var(--line); }
 .bfly .bf { height: 100%; flex: none; display: flex; align-items: center; }
 .bfly .half.paid .bf { background: var(--accent); border-radius: 5px 0 0 5px; justify-content: flex-start; }
@@ -1102,12 +1102,12 @@ function startApp(DATA) {
     // The amount sits inside its bar when the bar is wide enough, else just past its end.
     var maxV = sh.reduce(function (a, p) { return Math.max(a, p.paid, p.owed); }, 0) || 1;
     function half(v, cls) {
-      var w = v / maxV * 100, lab = '<span class="v">' + m(v) + '</span>';
+      var w = v / maxV * 100, lab = v > 0.005 ? '<span class="v">' + m(v) + '</span>' : '';
       return '<span class="half ' + cls + '"><span class="bf' + (w >= 58 ? ' in' : '') + '" style="width:' + w.toFixed(1) + '%">' + (w >= 58 ? lab : '') + '</span>' + (w >= 58 ? '' : lab) + '</span>';
     }
     h += '<section class="section"><h3>Balances</h3>' +
       '<div class="seg" role="group" aria-label="Shares by"><button type="button" data-shares="groups" aria-pressed="' + (state.shares !== 'people') + '">By group</button><button type="button" data-shares="people" aria-pressed="' + (state.shares === 'people') + '">By person</button></div>' +
-      (sh.length ? '<div><div class="bfly hd"><span></span><span class="half paid">Paid</span><span class="half share">Share</span></div>' + sh.map(function (p) {
+      (sh.length ? '<div><div class="bfly hd"><span class="half paid">Paid</span><span class="half share">Share</span></div>' + sh.map(function (p) {
         return '<div class="bfly"><span class="bn">' + esc(p.name) + '</span>' + half(p.paid, 'paid') + half(p.owed, 'share') + '</div>';
       }).join('') + '</div>' : '<p class="hint">Nothing logged yet.</p>') + '</section>';
 
