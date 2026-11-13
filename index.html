@@ -3,52 +3,1370 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>OOO</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="OOO">
-<meta name="theme-color" content="#27408B">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F3F5F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1424" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-512.png">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="icon" type="image/png" href="icon-512.png">
+<title>OOO</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- fonts load without holding up the first paint (system fonts until they arrive) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+JP:wght@400;600&display=swap" media="print" onload="this.media='all'">
 <style>
-  :root { --bg:#F3F5F9; --ink:#18213A; --ink2:#55607A; --accent:#27408B; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0F1424; --ink:#E8ECF6; --ink2:#B5BED6; --accent:#9DB3F5; } }
-  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system, system-ui, sans-serif; }
-  main { max-width:420px; margin:0 auto; padding:56px 16px; text-align:center; }
-  .logo { width:96px; height:96px; border-radius:22px; display:block; margin:0 auto; }
-  h1 { font-size:28px; margin:16px 0 4px; }
-  p { color:var(--ink2); margin:8px 0; }
-  ol { text-align:left; color:var(--ink2); padding-left:22px; }
-  a { color:var(--accent); font-weight:600; }
-</style>
-</head>
-<body>
-<main>
-  <!-- drawn inline: an <img> was cut off mid-load by the redirect and showed as a broken "?" box -->
-  <svg class="logo" viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B5BC4"/><stop offset="1" stop-color="#1B2C66"/></linearGradient></defs><rect width="512" height="512" fill="url(#lg)"/><g fill="none" stroke="#fff" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"><path d="M206 168v-26a20 20 0 0 1 20-20h60a20 20 0 0 1 20 20v26"/><rect x="126" y="168" width="260" height="200" rx="34"/><path d="M196 168v200M316 168v200"/></g><circle cx="176" cy="396" r="14" fill="#fff"/><circle cx="336" cy="396" r="14" fill="#fff"/><path transform="translate(330 96) rotate(35)" d="M0 -44 L10 -10 L46 8 L46 20 L10 10 L6 34 L18 44 L18 52 L0 46 L-18 52 L-18 44 L-6 34 L-10 10 L-46 20 L-46 8 L-10 -10 Z" fill="#FFD27A"/></svg>
-  <h1>OOO</h1>
-  <div id="msg"><p>Opening your trip…</p></div>
-</main>
-<script>
-  // Launcher for the OOO Trip Companion web app (Apps Script can't set an iPhone Home Screen icon).
-  // ?setup=1 shows Add to Home Screen steps; otherwise forwards straight to the app with the same trip keys.
-  var APP = 'https://script.google.com/macros/s/AKfycbwpoGwMWlE_InveJ3rCfw1H_9yewjGpVEWfT-dUrU4Cd0sDZ38SUswcaOFjjyUA1y16/exec';
-  var q = new URLSearchParams(location.search);
-  var keep = new URLSearchParams();
-  ['ks', 'trip', 'k'].forEach(function (n) { if (q.get(n)) keep.set(n, q.get(n)); });
-  var target = APP + (keep.toString() ? '?' + keep.toString() : '');
-  if (q.get('setup') === '1') {
-    // the saved Home Screen link must not include setup=1, so it opens the app directly
-    history.replaceState(null, '', location.pathname + (keep.toString() ? '?' + keep.toString() : ''));
-    document.getElementById('msg').innerHTML =
-      '<p>Add OOO to your Home Screen:</p><ol><li>Tap the Share button in Safari.</li>' +
-      '<li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>' +
-      '<p>The icon opens every trip you have unlocked. Keep this link to yourself: it works like your PINs.</p>' +
-      '<p><a id="go">Open OOO now</a></p>';
-    document.getElementById('go').href = target;
-  } else {
-    location.replace(target);
+/* Layout: one phone column; sticky header + day strip, timeline cards, bottom tab bar. Indigo ink on cool paper, persimmon for anything still to book. */
+:root {
+  --bg: #F3F5F9;
+  --surface: #FFFFFF;
+  --surface-2: #E9EDF4;
+  --line: #D8DEE8;
+  --ink: #18213A;
+  --ink-2: #4A5470;
+  --ink-3: #66708A;
+  --accent: #27408B;
+  --accent-soft: #E3E9F7;
+  --on-accent: #FFFFFF;
+  --persimmon: #B4460F;
+  --persimmon-soft: #FBE7DA;
+  --good: #1E6B46;
+  --good-soft: #DDF0E5;
+  --amber: #8A5A00;
+  --amber-soft: #F7ECCF;
+  --neg: #A3301F;
+  --pos: #1E6B46;
+  --bar: #9AA9CF;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', 'Noto Sans JP', system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+  --r: 14px;
+  --tabbar-h: 64px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1424; --surface: #182036; --surface-2: #222B44; --line: #2E3854;
+    --ink: #E8ECF6; --ink-2: #B5BED6; --ink-3: #98A2BD;
+    --accent: #9DB3F5; --accent-soft: #26335A; --on-accent: #0F1424;
+    --persimmon: #FFA978; --persimmon-soft: #4A2716;
+    --good: #7FD9A8; --good-soft: #173A2A; --amber: #F2C86B; --amber-soft: #3F3216;
+    --neg: #FF9C8C; --pos: #7FD9A8; --bar: #5A6C9E;
+    color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1424; --surface: #182036; --surface-2: #222B44; --line: #2E3854;
+  --ink: #E8ECF6; --ink-2: #B5BED6; --ink-3: #98A2BD;
+  --accent: #9DB3F5; --accent-soft: #26335A; --on-accent: #0F1424;
+  --persimmon: #FFA978; --persimmon-soft: #4A2716;
+  --good: #7FD9A8; --good-soft: #173A2A; --amber: #F2C86B; --amber-soft: #3F3216;
+  --neg: #FF9C8C; --pos: #7FD9A8; --bar: #5A6C9E;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+a { color: var(--accent); text-underline-offset: 2px; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.wrap {
+  max-width: 560px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.num { font-variant-numeric: tabular-nums; }
+
+/* header */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.top .wrap { padding-block: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.top h1 { margin: 0; font-family: var(--font-display); font-size: 22px; line-height: 1.2; font-weight: 700; text-wrap: balance; }
+.top .sub { font-size: 13px; color: var(--ink-3); }
+.days {
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  padding-block: 10px 2px; scroll-snap-type: x proximity;
+}
+.days::-webkit-scrollbar { display: none; }
+.days[hidden] { display: none; }
+.daychip {
+  flex: 0 0 auto; scroll-snap-align: start;
+  min-width: 56px; min-height: 52px; padding: 6px 10px;
+  border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  cursor: pointer;
+}
+.daychip .dw { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.daychip .dn { font-family: var(--font-display); font-size: 19px; font-weight: 700; line-height: 1.1; }
+.daychip .dot { width: 6px; height: 6px; border-radius: 3px; background: transparent; margin-top: 2px; }
+.daychip .dot.todo { background: var(--persimmon); }
+.daychip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.daychip[aria-pressed="true"] .dw { color: var(--on-accent); opacity: .85; }
+.daychip[aria-pressed="true"] .dot.todo { background: var(--on-accent); }
+.daychip.today:not([aria-pressed="true"]) { border-color: var(--accent); }
+
+main { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 24px); }
+main .wrap { padding-block: 16px 0; display: flex; flex-direction: column; gap: 14px; }
+
+/* day head */
+.dayhead { display: flex; flex-direction: column; gap: 6px; }
+.dayhead h2 { margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.2; font-weight: 700; }
+.daymeta { display: flex; flex-wrap: wrap; gap: 6px; }
+.meta {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+  border-radius: 999px; background: var(--surface-2); color: var(--ink-2); font-size: 13px; font-weight: 500;
+}
+.meta.todo { background: var(--persimmon-soft); color: var(--persimmon); }
+.meta.today { background: var(--accent); color: var(--on-accent); }
+.meta svg { flex: 0 0 auto; }
+
+/* timeline */
+.timeline { display: flex; flex-direction: column; gap: 10px; }
+.row { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 10px; align-items: start; }
+.time { padding-top: 14px; font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.time.empty::before { content: "·"; color: var(--ink-3); padding-left: 12px; }
+.card {
+  min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
+}
+.card.now { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.cardtop { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.kind { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pill.booked { background: var(--good-soft); color: var(--good); }
+.pill.to_book { background: var(--persimmon-soft); color: var(--persimmon); }
+.pill.bookable { background: var(--surface-2); color: var(--ink-2); }
+.pill.walk_in { background: var(--surface-2); color: var(--ink-2); }
+.pill.optional { background: transparent; border: 1px dashed var(--ink-3); color: var(--ink-2); }
+.pills { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.name { font-size: 17px; font-weight: 600; line-height: 1.3; text-wrap: balance; overflow-wrap: anywhere; }
+.facts { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.fact { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; font-size: 14px; color: var(--ink-2); }
+.fact svg { margin-top: 2px; color: var(--ink-3); }
+.fact span { min-width: 0; overflow-wrap: anywhere; }
+.fact .fl { display: block; }
+.fact .fl + .fl { margin-top: 4px; }
+.details { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; font-size: 14px; color: var(--ink); }
+.details li { overflow-wrap: anywhere; }
+.details li.h { list-style: none; margin-left: -18px; font-weight: 600; padding-top: 4px; }
+/* nested lines: d1/d2 are sub-bullets, num keeps the doc's own "1." numbering, gap marks a blank line in the doc */
+.details li.d1, .notes li.d1 { margin-left: 18px; list-style-type: circle; }
+.details li.d2, .notes li.d2 { margin-left: 36px; list-style-type: square; }
+.details li.d3, .notes li.d3 { margin-left: 54px; list-style-type: square; }
+.details li.num, .notes li.num { list-style: none; }
+.details li.gap, .notes li.gap { margin-top: 6px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  font-size: 14px; font-weight: 600; text-decoration: none; color: var(--accent);
+}
+.btn.primary { background: var(--accent-soft); border-color: transparent; }
+.btn.pbtn { padding: 0 11px; }
+.gate { max-width: 360px; margin: 24px auto 0; width: 100%; }
+.gate + .gate { margin-top: 0; }
+.gate input { font: inherit; font-size: 20px; letter-spacing: .2em; min-height: 48px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 100%; }
+.gate .btn { justify-content: center; min-height: 48px; cursor: pointer; border: 0; }
+.gate .btn:disabled { opacity: .6; }
+.gate[hidden], .splash[hidden] { display: none; }
+.splash { text-align: center; padding: 48px 0 0; color: var(--ink-2); }
+.splash svg { width: 84px; height: 84px; border-radius: 20px; display: block; margin: 0 auto 14px; }
+.splash h3 { font-family: var(--font-display); font-size: 26px; margin: 0 0 4px; color: var(--ink); }
+.splash p { margin: 0; }
+.pk { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 4px; background: var(--accent); color: var(--on-accent); font-family: var(--font-display); font-size: 12px; font-weight: 700; line-height: 1; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.drive-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); font-weight: 500; }
+details.more { border-top: 1px solid var(--line); padding-top: 6px; }
+details.more > summary {
+  list-style: none; cursor: pointer; min-height: 36px; display: flex; align-items: center; justify-content: space-between;
+  font-size: 14px; font-weight: 600; color: var(--ink-2);
+}
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin-right: 4px; transition: transform .15s; }
+details.more[open] > summary::after { transform: rotate(-135deg); }
+.notes { margin: 4px 0 6px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--ink-2); }
+.notes li { overflow-wrap: anywhere; }
+.notes li.strong { font-weight: 600; color: var(--ink); }
+.backup { margin: 6px 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); display: flex; flex-direction: column; gap: 6px; }
+.backup .bname { font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+
+/* compact row for drives, flights etc */
+.mini {
+  min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: var(--r); border: 1px dashed var(--line); color: var(--ink-2);
+}
+.mini .mt { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.mini .mn { font-weight: 600; color: var(--ink); font-size: 15px; overflow-wrap: anywhere; }
+.mini .ms { font-size: 13px; overflow-wrap: anywhere; }
+.mini a.ic { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent); }
+
+/* sections on trip / expenses */
+.section { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.section h3 { margin: 0; font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+.section .hint { font-size: 13px; color: var(--ink-3); margin: -4px 0 0; }
+.list { display: flex; flex-direction: column; }
+.li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px 0; border-top: 1px solid var(--line); align-items: baseline; }
+.li:first-child { border-top: 0; padding-top: 2px; }
+.li .t { font-weight: 600; overflow-wrap: anywhere; }
+.li .s { grid-column: 1 / -1; font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
+.li .r { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.todo-item { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.todo-item:first-child { border-top: 0; padding-top: 2px; }
+.todo-item button.when { all: unset; cursor: pointer; font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--accent); line-height: 1.2; }
+.todo-item button.when small { display: block; font-family: var(--font-body); font-weight: 500; font-size: 12px; color: var(--ink-3); }
+.todo-item .t { font-weight: 600; overflow-wrap: anywhere; }
+.todo-item ul { margin: 4px 0 0; padding-left: 16px; font-size: 14px; color: var(--ink-2); display: flex; flex-direction: column; gap: 2px; }
+.todo-item ul li.tb { color: var(--persimmon); font-weight: 600; }
+
+/* trip overview */
+.ov-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; line-height: 1.25; text-wrap: balance; }
+.ov-intro { margin: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink-2); }
+.ov-intro p { margin: 0; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.stat b { font-family: var(--font-display); font-size: 20px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--ink-3); font-weight: 500; }
+.who-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.who-row .meta { font-weight: 600; }
+.doclinks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.doclinks .btn { justify-content: center; }
+.leg { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.leg:first-child { border-top: 0; padding-top: 2px; }
+.leg .lh { display: flex; align-items: center; gap: 8px; font-weight: 600; flex-wrap: wrap; overflow-wrap: anywhere; }
+.leg .lh svg { color: var(--ink-3); }
+.leg .ld { font-size: 13px; color: var(--ink-2); text-align: right; white-space: nowrap; }
+.leg .lt { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; font-family: var(--font-display); font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; }
+.leg .lt .dur { font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-3); }
+.leg .lt svg { align-self: center; color: var(--ink-3); }
+.leg .lc { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+
+/* expenses */
+.hero-num { display: flex; flex-direction: column; gap: 2px; }
+.hero-num .lbl { font-size: 13px; color: var(--ink-3); font-weight: 500; }
+.hero-num .val { font-family: var(--font-display); font-size: 34px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.hero-num .val small { font-size: 16px; font-weight: 600; color: var(--ink-3); margin-left: 4px; }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-2); align-self: flex-start; }
+.seg button { border: 0; background: transparent; min-height: 36px; padding: 0 14px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.pay { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--line); align-items: center; }
+.pay:first-child { border-top: 0; }
+.pay .who { font-weight: 600; overflow-wrap: anywhere; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pay .who .arrow { color: var(--ink-3); }
+.pay .amt { font-family: var(--font-display); font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
+.bal { display: grid; grid-template-columns: 92px minmax(0, 1fr) 88px; gap: 10px; align-items: center; padding: 6px 0; font-size: 14px; }
+.bal .bn { font-weight: 600; overflow-wrap: anywhere; line-height: 1.2; }
+.bal .bt { position: relative; height: 10px; }
+.bal .bt::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line); }
+.bal .bf { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.bal .bf.pos { left: 50%; background: var(--pos); }
+.bal .bf.neg { right: 50%; background: var(--neg); }
+.bal .bv { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.bal .bv.pos { color: var(--pos); }
+.bal .bv.neg { color: var(--neg); }
+.cat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 6px 0; font-size: 14px; }
+.cat .cb { grid-column: 1 / -1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.cat .cb i { display: block; height: 100%; background: var(--bar); border-radius: 4px; }
+.cat .cv { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.foot { font-size: 12px; color: var(--ink-3); text-align: center; padding: 8px 0 0; display: flex; flex-direction: column; gap: 4px; }
+
+/* tab bar */
+nav.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 25;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
+}
+nav.tabbar .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--tabbar-h); }
+nav.tabbar a {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  text-decoration: none; color: var(--ink-3); font-size: 12px; font-weight: 600;
+}
+nav.tabbar a[aria-current="page"] { color: var(--accent); }
+nav.tabbar a.hero { justify-content: flex-end; padding-bottom: 8px; color: var(--accent); }
+nav.tabbar a.hero .bub {
+  width: 56px; height: 56px; margin-top: -26px; border-radius: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent); color: var(--on-accent);
+  border: 4px solid var(--surface); box-shadow: 0 4px 12px rgba(24,33,58,.28);
+  transition: transform .15s;
+}
+nav.tabbar a.hero:not([aria-current="page"]) .bub { background: var(--accent-soft); color: var(--accent); box-shadow: 0 2px 6px rgba(24,33,58,.18); }
+nav.tabbar a.hero:not([aria-current="page"]) { color: var(--ink-3); }
+nav.tabbar a.hero:active .bub { transform: scale(.94); }
+.top .wrap { position: relative; }
+.top .eyebrow, .top h1, .top .sub { padding-right: 56px; }
+.hbtn {
+  position: absolute; top: 10px; right: max(16px, env(safe-area-inset-right, 0px));
+  width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center;
+  color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); text-decoration: none;
+}
+.hbtn[aria-current="page"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.hbtn[hidden] { display: none; }
+.ibx-form textarea {
+  font: inherit; font-size: 16px; min-height: 84px; resize: vertical; width: 100%;
+  padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+}
+.ibx-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ibx-row .btn { cursor: pointer; border: 0; min-height: 44px; padding: 0 18px; }
+.ibx-row .btn:disabled { opacity: .6; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; font-size: 13px; }
+.who { display: flex; flex-wrap: wrap; gap: 8px; }
+.who .btn { cursor: pointer; min-height: 44px; padding: 0 16px; }
+.msg { border-top: 1px solid var(--line); padding: 10px 0 2px; display: flex; flex-direction: column; gap: 4px; }
+.msg:first-child { border-top: 0; padding-top: 0; }
+.msg .mh { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink-3); }
+.msg .mh b { color: var(--ink); font-size: 14px; }
+.msg .mt { white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg .mq { font-size: 12px; color: var(--ink-3); border-left: 2px solid var(--line); padding-left: 8px; overflow-wrap: anywhere; }
+.msg .mact { display: flex; justify-content: flex-end; }
+.msg .mact .linkbtn { min-height: 32px; }
+.ibx-re { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+.ibx-re span { overflow-wrap: anywhere; }
+.msg .mr { font-size: 13px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 8px 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ptr {
+  position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 40;
+  transform: translate(-50%, -60px); opacity: 0;
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 20px;
+  background: var(--surface); color: var(--ink-2); font-size: 13px; font-weight: 600;
+  border: 1px solid var(--line); box-shadow: 0 4px 12px rgba(24,33,58,.18); pointer-events: none;
+}
+.ptr svg { flex: none; }
+.ptr.ready svg { transform: rotate(180deg); }
+.ptr.busy { transform: translate(-50%, 0); opacity: 1; transition: transform .2s, opacity .2s; }
+.ptr.busy svg { animation: ptrspin .8s linear infinite; }
+.ptr.done { transition: transform .25s, opacity .25s; }
+@keyframes ptrspin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a href="#inbox" id="tab-inbox" class="hbtn" aria-label="Inbox" title="Inbox" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg></a>
+    <div class="eyebrow" id="eyebrow">Trip</div>
+    <h1 id="title">Plan</h1>
+    <div class="sub" id="sub"></div>
+    <div class="days" id="days" role="group" aria-label="Choose a day"></div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap" id="view"></div>
+</main>
+<div class="ptr" id="ptr" role="status" aria-live="polite"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg><span id="ptr-t">Pull to refresh</span></div>
+
+<nav class="tabbar" aria-label="Sections">
+  <div class="in">
+    <a href="#trip" id="tab-trip">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18v12H3z"/><path d="M8 7V5h8v2"/><path d="M3 12h18"/></svg>
+      Trip
+    </a>
+    <a href="#plan" id="tab-plan" class="hero">
+      <span class="bub"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></span>
+      Plan
+    </a>
+    <a href="#expenses" id="tab-expenses">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      Expenses
+    </a>
+  </div>
+</nav>
+
+<script id="trip-data" type="application/json">null</script>
+<script id="trip-boot" type="application/json">{"api": "https://script.google.com/macros/s/AKfycbwpoGwMWlE_InveJ3rCfw1H_9yewjGpVEWfT-dUrU4Cd0sDZ38SUswcaOFjjyUA1y16/exec"}</script>
+<script>
+/* ---------- server calls: google.script.run inside Apps Script, or the JSON API (doPost) from the
+   GitHub Pages copy. Both hand back the same string (or an Error whose message is a short code). ---------- */
+function canCallServer() { return !!((window.google && google.script && google.script.run) || window.__api); }
+function callServer(fn, args, ok, fail) {
+  if (window.google && google.script && google.script.run) {
+    var r = google.script.run.withSuccessHandler(ok).withFailureHandler(fail);
+    r[fn].apply(r, args);
+    return;
+  }
+  if (!window.__api) { fail(new Error('noserver')); return; }
+  // text/plain keeps this a "simple" request (no CORS preflight, which Apps Script can't answer);
+  // Apps Script answers through a redirect to googleusercontent.com, which fetch follows.
+  fetch(window.__api, { method: 'POST', redirect: 'follow', credentials: 'omit',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }) })
+    .then(function (res) { if (!res.ok) throw new Error('http ' + res.status); return res.json(); })
+    .then(function (j) { if (j && j.ok) ok(j.result); else fail(new Error((j && j.error) || 'error')); })
+    .catch(function (err) { fail(err); });
+}
+function startApp(DATA) {
+  'use strict';
+  if (window.__tripApp) { window.__tripApp.update(DATA); return; }
+  document.getElementById('days').hidden = false;
+  document.querySelector('nav.tabbar').hidden = false;
+  document.getElementById('tab-inbox').hidden = false;
+  var META = DATA.meta || { key: 'kansai', name: 'Kansai', tz: 'Asia/Tokyo', place: 'Japan',
+    doc: '1STew5l6lSxAJblXiEvOSOIUPHnDt4h-i5Qbr2QaaDrA', sheet: '1tXs9Z_JIYoM-ZyhDhBnvRXeW4fBxh99AKVnKLn8wzLs' };
+  var TZ = META.tz || 'Asia/Tokyo';
+  var PLACE_TIME = (META.place ? META.place : 'local') + ' time';
+  var DOC_URL = 'https://docs.google.com/document/d/' + META.doc + '/edit';
+  var SHEET_URL = 'https://docs.google.com/spreadsheets/d/' + META.sheet + '/edit';
+  var SK = 'trip-' + META.key + '-';
+  var days = DATA.plan.days;
+  var LIVE = DATA.mode === 'live';
+  function rangeText(a, b) {
+    var M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var x = a.split('-').map(Number), y = b.split('-').map(Number);
+    if (x[0] !== y[0]) return x[2] + ' ' + M[x[1] - 1] + ' ' + x[0] + ' – ' + y[2] + ' ' + M[y[1] - 1] + ' ' + y[0];
+    if (x[1] !== y[1]) return x[2] + ' ' + M[x[1] - 1] + ' – ' + y[2] + ' ' + M[y[1] - 1] + ' ' + y[0];
+    return x[2] + '–' + y[2] + ' ' + M[y[1] - 1] + ' ' + y[0];
+  }
+  if (days.length) document.getElementById('eyebrow').textContent = META.name + ' · ' + rangeText(days[0].date, days[days.length - 1].date);
+  var view = document.getElementById('view');
+  var state = { tab: 'plan', day: null, settle: 'groups', inbox: null, draft: '', me: null, sending: false, inboxMsg: '', replyTo: 0 };
+
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+  /* ---------- helpers ---------- */
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function safeUrl(u) { return /^https:\/\//i.test(u || '') ? u : null; }
+  function segsHtml(segs, stripLabel) {
+    var out = '', first = true;
+    (segs || []).forEach(function (s) {
+      var t = s.t;
+      if (first && stripLabel) { t = t.replace(/^[^:]{1,40}:\s*/, ''); }
+      first = false;
+      if (!t) return;
+      var u = safeUrl(s.u);
+      out += u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(t) + '</a>' : esc(t);
+    });
+    return out;
+  }
+  function segsText(segs) { return (segs || []).map(function (s) { return s.t; }).join(''); }
+  function money(n) { return n.toLocaleString('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function tokyoToday() {
+    try {
+      var p = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+      return p;
+    } catch (e) { return new Date().toISOString().slice(0, 10); }
+  }
+  function tokyoMinutes() {
+    try {
+      var p = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+      var a = p.split(':'); return (+a[0]) * 60 + (+a[1]);
+    } catch (e) { return -1; }
+  }
+  function driveMins(s) {
+    if (!s) return 0;
+    var head = s.toLowerCase().split(/[(.,]/)[0];
+    var h = 0, m = 0, hm = head.match(/(\d+)\s*hrs?/), mm = head.match(/(\d+)(?:\s*[-–]\s*(\d+))?\s*mins?/);
+    if (hm) h = +hm[1];
+    if (mm) m = +(mm[2] || mm[1]);
+    return h * 60 + m;
+  }
+  // "Grab: 10 mins" rows read "~10 mins by Grab"; "Drive:" rows stay as they are
+  function byMode(it) {
+    var m = it.travel;
+    return m && m !== 'Drive' && (it.drive || '').toLowerCase().indexOf(m.toLowerCase()) < 0 ? ' by ' + m : '';
+  }
+  function travelWord(items) {
+    var modes = {};
+    items.forEach(function (it) { if (it.drive) modes[it.travel || 'Drive'] = 1; });
+    var ks = Object.keys(modes);
+    return ks.length === 1 && ks[0] !== 'Drive' ? 'by ' + ks[0] : 'driving';
+  }
+  function fmtMins(t) { var h = Math.floor(t / 60), m = t % 60; return (h ? h + 'h ' : '') + (m ? m + 'm' : (h ? '' : '0m')); }
+  function shortDate(d) { return d.weekday.slice(0, 3) + ' ' + d.label; }
+
+  var I = {
+    meal: '<path d="M7 3v8a2 2 0 0 0 2 2v8"/><path d="M11 3v8"/><path d="M7 3h4"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 4 3 4v9"/>',
+    activity: '<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>',
+    drive: '<path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v2H3z"/><circle cx="7.5" cy="13" r="1"/><circle cx="16.5" cy="13" r="1"/>',
+    hotel: '<path d="M3 19V6"/><path d="M3 15h18v4"/><path d="M21 15v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11" r="2"/>',
+    flight: '<path d="M2 16l20-6-3-2-7 2-5-5-2 1 3 5-4 1-2-1-1 1 3 3z"/>',
+    ferry: '<path d="M4 15l-1-4h18l-2 4"/><path d="M7 11V7h8l2 4"/><path d="M11 7V4"/><path d="M2 19c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/>',
+    snack: '<path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v3M12 3v3"/>',
+    shop: '<path d="M5 8h14l-1 13H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    ticket: '<path d="M3 8a2 2 0 0 0 0 4v4h18v-4a2 2 0 0 0 0-4V4H3z"/><path d="M14 4v12"/>',
+    star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+    bowl: '<path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-1 1-1 1-2M12 7c0-1 1-1 1-2M16 7c0-1 1-1 1-2"/>',
+    cal: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+    pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+    route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    alert: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>'
+  };
+  function icon(name, size) { var s = size || 16; return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + I[name] + '</svg>'; }
+  var KIND = { Meal: 'meal', Activity: 'activity', Drive: 'drive', Hotel: 'hotel', Flight: 'flight', Ferry: 'ferry', Snack: 'snack', Shopping: 'shop' };
+  // Ferry legs: the parser calls every Departure/Arrival a Flight. Any trip: a leg whose name, info or details
+  // mention a ferry or boat is a ferry, and an arrival right after a ferry departure is one too.
+  var FERRY_RE = /\b(ferry|ferries|boat|catamaran|jetty|pier|cruise)\b/i;
+  function travelText(it) {
+    return [it.name].concat((it.info || []).map(function (i) { return (i.label || '') + ' ' + (i.value || ''); }))
+      .concat((it.details || []).map(function (d) { return segsText(d.segs); })).join(' ');
+  }
+  function markFerries(dayList) {
+    var prev = null;
+    (dayList || []).forEach(function (d) {
+      (d.items || []).forEach(function (it) {
+        if (it.kind !== 'Flight' && it.kind !== 'Ferry') return;
+        var ferry = FERRY_RE.test(travelText(it)) || (/^arriv/i.test(it.name) && prev && prev.kind === 'Ferry' && /^depart/i.test(prev.name));
+        if (ferry) it.kind = 'Ferry';
+        prev = it;
+      });
+    });
+  }
+  markFerries((DATA.plan || {}).days);
+  var STATUS = { booked: 'Booked', to_book: 'To book', bookable: 'Can book', walk_in: 'Walk-in' };
+
+  function factIcon(label) {
+    var l = (label || '').toLowerCase();
+    if (l.indexOf('opening') === 0 || l.indexOf('pick-up') === 0) return 'clock';
+    if (l.indexOf('ticket') === 0) return 'ticket';
+    if (l.indexOf('rating') > -1) return 'star';
+    if (l.indexOf('dish') > -1 || l.indexOf('most ordered') === 0) return 'bowl';
+    if (l.indexOf('booking') === 0 || l.indexOf('online') === 0 || l.indexOf('reservation') === 0) return 'cal';
+    if (l.indexOf('location') === 0) return 'pin';
+    return 'info';
+  }
+  function factsHtml(info) {
+    var rows = [], ratings = [];
+    (info || []).forEach(function (i) {
+      var l = (i.label || '').toLowerCase();
+      if (l.indexOf('rating') > -1) {
+        var txt = segsText(i.segs);
+        var re = /(Google|Tabelog)\s*Rating:?\s*([0-9.]+|TBC)/gi, m;
+        while ((m = re.exec(txt))) { if (m[2].toUpperCase() !== 'TBC') ratings.push(m[1] + ' ' + m[2]); }
+        if (!ratings.length && !/TBC/i.test(txt)) ratings.push(txt);
+        return;
+      }
+      var body = segsHtml(i.segs, !!i.label);
+      if (!body) return;
+      if (/^(opening hours|tickets)/i.test(i.label || '') && /;\s/.test(body) && !(i.segs || []).some(function (x) { return x.u; })) {
+        body = body.split(/;\s+/).map(function (part) { return '<span class="fl">' + part + '</span>'; }).join('');
+      }
+      rows.push('<li class="fact">' + icon(factIcon(i.label)) + '<span>' + body + '</span></li>');
+    });
+    if (ratings.length) {
+      var uniq = ratings.filter(function (r, k) { return ratings.indexOf(r) === k; });
+      var at = Math.min(1, rows.length);
+      rows.splice(at, 0, '<li class="fact">' + icon('star') + '<span>' + esc(uniq.join(' · ')) + '</span></li>');
+    }
+    return rows.length ? '<ul class="facts">' + rows.join('') + '</ul>' : '';
+  }
+  // Indent bullets under the plain line they follow (within one blank-line group), and typed "1." lines under a "...:" line.
+  function nestLines(lines) {
+    var parent = false, colon = false;
+    return lines.map(function (l) {
+      var t = lt(l.segs).trim(), d = 0, num = false;
+      if (l.gap) { parent = false; colon = false; }
+      if (l.heading) { parent = false; colon = false; }
+      else if (l.lv >= 0) d = l.lv + (parent ? 1 : 0);
+      else if (colon && /^\d+[.)]\s/.test(t)) { d = 1; num = true; }
+      else { parent = true; colon = /:$/.test(t); }
+      var cls = [];
+      if (d) cls.push('d' + Math.min(d, 3));
+      if (num) cls.push('num');
+      if (l.gap) cls.push('gap');
+      return cls;
+    });
+  }
+  function detailsHtml(details) {
+    if (!details || !details.length) return '';
+    var nest = nestLines(details);
+    return '<ul class="details">' + details.map(function (d, k) {
+      var cls = (d.heading ? ['h'] : []).concat(nest[k]);
+      return '<li' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '>' + segsHtml(d.segs) + '</li>';
+    }).join('') + '</ul>';
+  }
+  function notesHtml(notes) {
+    var nest = nestLines(notes);
+    return '<ul class="notes">' + notes.map(function (n, k) {
+      var cls = (n.bold ? ['strong'] : []).concat(nest[k]);
+      return '<li' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '>' + segsHtml(n.segs) + '</li>';
+    }).join('') + '</ul>';
+  }
+
+  /* ---------- plan ---------- */
+  function dayTodo(d) { return d.items.filter(function (it) { return it.status === 'to_book'; }).length; }
+  function renderDays() {
+    var el = document.getElementById('days');
+    var today = tokyoToday();
+    el.innerHTML = days.map(function (d, k) {
+      var cls = 'daychip' + (d.date === today ? ' today' : '');
+      return '<button type="button" class="' + cls + '" id="day-' + d.date + '" data-day="' + d.date + '" aria-pressed="' + (d.date === state.day) + '" aria-label="' + esc(d.weekday + ' ' + d.label + (dayTodo(d) ? ', has bookings to make' : '')) + '">' +
+        '<span class="dw">' + esc(d.weekday.slice(0, 3)) + '</span><span class="dn">' + esc(d.label.split(' ')[0]) + '</span><span class="dot' + (dayTodo(d) ? ' todo' : '') + '"></span></button>';
+    }).join('');
+    el.hidden = state.tab !== 'plan';
+    var active = document.getElementById('day-' + state.day);
+    if (active && active.scrollIntoView) {
+      var left = active.offsetLeft - el.offsetLeft - 16;
+      el.scrollLeft = Math.max(0, left);
+    }
+  }
+
+  /* ---------- per-stop view model: tidy lines, route, parking, pin ---------- */
+  var MAPS_RE = /google\.[a-z.]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/i;
+  function isMaps(u) { return !!u && MAPS_RE.test(u); }
+  function isDir(u) { return isMaps(u) && /\/maps\/dir/.test(u); }
+  function isStray(s) { return s.u && isMaps(s.u) && /^\s*\(?\s*google maps\s*\)?\s*$/i.test(s.t); }
+  function lt(segs) { return (segs || []).map(function (s) { return s.t; }).join(''); }
+  function tidy(segs) {
+    var m = [];
+    (segs || []).forEach(function (s) {
+      if (s.t === '' && !s.u) return;
+      var l = m[m.length - 1];
+      if (l && !l.u && !s.u) l.t += s.t; else m.push(s.u ? { t: s.t, u: s.u } : { t: s.t });
+    });
+    m.forEach(function (s) {
+      if (!s.u) s.t = s.t.replace(/\(\s*\)/g, '').replace(/\s{2,}/g, ' ').replace(/\s+([,.:;)])/g, '$1');
+    });
+    if (m.length && !m[0].u) m[0].t = m[0].t.replace(/^[\s\/,·;-]+/, '');
+    var L = m[m.length - 1];
+    if (L && !L.u) L.t = L.t.replace(/\s*Location:\s*$/i, '').replace(/[\s\/,·;-]+$/, '');
+    return m.filter(function (s) { return s.u || s.t.trim() !== ''; });
+  }
+  function stripStray(segs) { return tidy((segs || []).filter(function (s) { return !isStray(s); })); }
+  function hereToName(segs) {
+    // "One Park: here" -> link on "One Park"
+    if (segs.length === 2 && !segs[0].u && segs[1].u && /^here$/i.test(segs[1].t.trim())) {
+      var nm = segs[0].t.replace(/:\s*$/, '').trim();
+      if (nm) return [{ t: nm, u: segs[1].u }];
+    }
+    return segs;
+  }
+  function firstPlaceLink(lines) {
+    for (var i = 0; i < lines.length; i++) {
+      var segs = lines[i].segs || [];
+      for (var j = 0; j < segs.length; j++) if (isMaps(segs[j].u) && !isDir(segs[j].u) && !/\/maps\/reserve/.test(segs[j].u)) return segs[j].u;
+    }
+    return null;
+  }
+  function searchUrl(q) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q); }
+  function placeDest(url, fallback) {
+    try { var q = new URL(url).searchParams.get('query'); if (q) return q; } catch (e) {}
+    var all = url.match(/!3d-?\d+\.\d+!4d-?\d+\.\d+/g);
+    if (all) { var m = all[all.length - 1].match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/); return m[1] + ',' + m[2]; }
+    var p = url.match(/\/maps\/place\/([^/@]+)/);
+    if (p) { try { return decodeURIComponent(p[1].replace(/\+/g, ' ')); } catch (e) {} }
+    var at = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (at) return at[1] + ',' + at[2];
+    return fallback;
+  }
+  function routeTo(dirUrl, dest) {
+    var origin = null;
+    if (dirUrl) {
+      try {
+        var u = new URL(dirUrl);
+        origin = u.searchParams.get('origin');
+        if (!origin) { var m = u.pathname.match(/\/maps\/dir\/([^/]+)\//); if (m) origin = decodeURIComponent(m[1].replace(/\+/g, ' ')); }
+      } catch (e) {}
+    }
+    return 'https://www.google.com/maps/dir/?api=1' + (origin ? '&origin=' + encodeURIComponent(origin) : '') +
+      '&destination=' + encodeURIComponent(dest) + '&travelmode=driving';
+  }
+  function shortName(s) { s = s.replace(/^\(|\)$/g, '').trim(); s = s.charAt(0).toUpperCase() + s.slice(1); return s.length > 26 ? s.slice(0, 25).trim() + '…' : s; }
+  function mergeColon(lines, renamePark) {
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var L = lines[i], t = lt(L.segs).trim();
+      if (/:$/.test(t)) {
+        var isPark = /^parking:$/i.test(t), fol = [], j = i + 1;
+        while (j < lines.length) {
+          var tt = lt(lines[j].segs).trim();
+          if (/:$/.test(tt) || /^\d+[.)]\s/.test(tt) || /^(backup|fallback)\b/i.test(tt) || lines[j].gap) break;
+          if (!isPark && lines[j].lv >= 0 && !(L.lv >= 0)) break;
+          if (isPark && !/park|lot/i.test(tt)) break;
+          fol.push(lines[j]); j++;
+        }
+        if (fol.length > 2) fol = fol.slice(0, 1);
+        if (fol.length >= 1) {
+          var head = L.segs;
+          if (isPark && renamePark) head = [{ t: 'Backup parking:' }];
+          var segs = head.concat([{ t: ' ' }]);
+          fol.forEach(function (f, k) { if (k) segs.push({ t: '; ' }); segs = segs.concat(f.segs); });
+          out.push({ segs: tidy(segs), bold: L.bold, lv: L.lv, gap: L.gap });
+          i = j - 1;
+          continue;
+        }
+      }
+      out.push(L);
+    }
+    return out;
+  }
+  function bookingLinks(lines, venue) {
+    // pull reservation / booking links out of detail lines; returns [kept lines, links]
+    var links = [], kept = [];
+    lines.forEach(function (d) {
+      var t = lt(d.segs), hasLink = d.segs.some(function (x) { return x.u; });
+      var isRes = /^Online reservation/i.test(t);
+      var isBook = hasLink && (isRes || /booked details/i.test(t) || d.segs.filter(function (x) { return x.u; }).every(function (x) { return /booking|reserv/i.test(x.t); }));
+      if (!isBook) { kept.push(d); return; }
+      d.segs.forEach(function (x, k) {
+        if (!x.u) return;
+        var prev = lt(d.segs.slice(0, k));
+        var lab = x.t.trim();
+        if (/^here$/i.test(lab) && /booked details/i.test(prev)) lab = 'Booking details';
+        else if (isRes && /online reservation/i.test(prev.split('/').pop())) lab = (/^website$/i.test(lab) || (venue || '').toLowerCase().indexOf(lab.toLowerCase()) > -1) ? 'Book online' : 'Book via ' + lab;
+        links.push({ t: lab, u: x.u });
+      });
+    });
+    return [kept, links];
+  }
+  function addBooking(info, links) {
+    if (!links.length) return info;
+    var extra = [];
+    links.forEach(function (l, k) { extra.push({ t: k ? ' · ' : '' }); extra.push(l); });
+    var row = info.filter(function (x) { return /^booking/i.test(x.label || ''); })[0];
+    if (row) row.segs = row.segs.concat([{ t: ' · ' }]).concat(extra);
+    else info.push({ label: 'Booking', value: '', segs: [{ t: 'Booking: ' }].concat(extra) });
+    return info;
+  }
+  // "OPTIONAL - late lunch ..." -> "Late lunch ..." (the Optional pill already says it)
+  function dropOptional(segs) {
+    if (!segs.length || segs[0].u || !/^OPTIONAL\b\s*[-–:]?\s*/.test(segs[0].t)) return segs;
+    var first = segs[0].t.replace(/^OPTIONAL\b\s*[-–:]?\s*/, '');
+    first = first.charAt(0).toUpperCase() + first.slice(1);
+    return tidy([{ t: first }].concat(segs.slice(1)));
+  }
+  function prepItem(it) {
+    var notes = (it.notes || []).map(function (n) { return { segs: n.segs.slice(), bold: n.bold, lv: n.lv, gap: n.gap }; });
+    var dir = it.directions || null;
+    // first-choice parking: first map link in the parking block of the notes
+    var parking = null, onsite = false, parkHeaderIdx = -1;
+    for (var i = 0; i < notes.length && !parking; i++) {
+      var t = lt(notes[i].segs);
+      if (!/^(Parking\b|Park at\b)/i.test(t)) continue;
+      if (/^Parking:$/i.test(t.trim())) parkHeaderIdx = i;
+      for (var j = i; j < Math.min(notes.length, i + 4); j++) {
+        var tj = lt(notes[j].segs);
+        if (j > i && (!/park|lot/i.test(tj) || /^(backup|fallback)\b/i.test(tj))) break;
+        if (/on-site|own car park|in front of the restaurant/i.test(tj)) onsite = true;
+        var segs = notes[j].segs;
+        for (var k = 0; k < segs.length; k++) {
+          if (!isMaps(segs[k].u) || isDir(segs[k].u)) continue;
+          var lab = segs[k].t.trim(), before = lt(segs.slice(0, k)).trim(), name;
+          if (!/^(here|\(?google maps\)?)$/i.test(lab)) name = lab;
+          else if (/^[^:]{2,60}:$/.test(before) && !/^parking:$/i.test(before)) name = before.slice(0, -1);
+          else {
+            var m = before.match(/^(?:Parking:\s*|Park at\s+)([^(,.]+)/i);
+            name = m ? m[1] : 'Parking';
+          }
+          parking = { url: segs[k].u, name: shortName(name), backup: onsite };
+          // remove the link; drop the line if only "Name:" is left
+          var rest = segs.slice(0, k).concat(segs.slice(k + 1));
+          var restT = lt(rest).trim();
+          if (/^[^:]{2,60}:?$/.test(restT) && !/^Park/i.test(restT) || /^[^:]{2,60}:$/.test(restT)) notes.splice(j, 1);
+          else notes[j].segs = tidy(rest);
+          break;
+        }
+        if (parking) break;
+      }
+    }
+    // lines: Google Maps links out, "Name: here" -> link on name, colon lines merged
+    notes = notes.map(function (n) { return { segs: hereToName(stripStray(n.segs)), bold: n.bold, lv: n.lv, gap: n.gap }; })
+      .filter(function (n) { return n.segs.length; });
+    notes = mergeColon(notes, !!parking && !onsite && parkHeaderIdx > -1);
+    var driveIdx = -1;
+    notes.forEach(function (n, k) { if (driveIdx < 0 && /^(Drive|Grab|Taxi)( from [^:]+)?:/.test(lt(n.segs))) driveIdx = k; });
+    if (driveIdx > -1 && !(it.drive && it.drive.length > 28)) notes.splice(driveIdx, 1);
+    var details = (it.details || []).map(function (d) {
+      return { segs: stripStray(d.segs), heading: d.heading, lv: d.lv, gap: d.gap };
+    }).filter(function (d) { return d.segs.length && !/^\(.*\)$/.test(lt(d.segs).trim()); });
+    var bl = bookingLinks(details, it.name);
+    details = mergeColon(bl[0].map(function (d) { return { segs: hereToName(d.segs), heading: d.heading, lv: d.lv, gap: d.gap }; }));
+    var info = addBooking((it.info || []).map(function (x) { return { label: x.label, value: x.value, segs: dropOptional(stripStray(x.segs)) }; }).filter(function (x) { return x.segs.length; }), bl[1]);
+    // route: drive time (or walk) label; destination = first-choice parking when there is one
+    var label = null;
+    if (it.drive) { var mm = it.drive.match(/(about\s+|~)?\d+(?:\s*[–-]\s*\d+)?\s*(?:hrs?|mins?)(?:\s*\d+\s*mins?)?/i); label = mm ? mm[0].replace(/^about\s+/i, '~') + byMode(it) : null; }
+    if (!label && dir) {
+      var wl = (it.notes || []).map(function (n) { return lt(n.segs); }).join(' ').match(/walk\s+(\d+(?:\s*[–-]\s*\d+)?\s*mins?)/i);
+      label = wl ? 'Walk ' + wl[1] : 'Route';
+    }
+    var route = dir;
+    if (parking && !parking.backup && dir) route = routeTo(dir, placeDest(parking.url, parking.name));
+    var generic = /^(breakfast|lunch|dinner|check-in to hotel|breakfast & check-out)$/i.test(it.name);
+    var head = (it.details || []).filter(function (d) { return d.heading; })[0];
+    var pinQ = /visit|tour/i.test(it.name) && head ? lt(head.segs) : it.name.replace(/\s*\([^)]*\)\s*$/, '');
+    var pin = it.maps || firstPlaceLink(it.details || []) || (!generic && it.kind !== 'Drive' && it.kind !== 'Flight' ? searchUrl(pinQ) : null);
+    if (it.kind === 'Hotel' && head) pin = searchUrl(lt(head.segs));
+    var backups = (it.backups || []).slice().sort(function (x, y) { return (x.earlier ? 1 : 0) - (y.earlier ? 1 : 0); }).map(function (b) {
+      var bd = bookingLinks((b.details || []).map(function (d) { return { segs: stripStray(d.segs), heading: d.heading, lv: d.lv, gap: d.gap }; }).filter(function (d) { return d.segs.length; }), b.name);
+      return {
+        name: b.name.replace(/\s+-\s+was on\b.*$/i, ''), status: b.status, earlier: !!b.earlier,
+        info: addBooking((b.info || []).map(function (x) { return { label: x.label, value: x.value, segs: stripStray(x.segs) }; }), bd[1]),
+        details: mergeColon(bd[0].map(function (d) { return { segs: hereToName(d.segs), heading: d.heading, lv: d.lv, gap: d.gap }; })),
+        pin: firstPlaceLink((b.details || []).concat(b.info || [])) || searchUrl(b.name.replace(/\s*\([^)]*\)\s*$/, ''))
+      };
+    });
+    return { notes: notes, details: details, info: info, route: route, routeLabel: label, ownRoute: !!dir, parking: parking, pin: pin, backups: backups };
+  }
+
+  function parkBtn(p) {
+    var lab = 'Parking: ' + p.name + (p.backup ? ' (backup)' : '');
+    return '<a class="btn pbtn" href="' + esc(p.url) + '" target="_blank" rel="noopener" aria-label="' + esc(lab) + '" title="' + esc(lab) + '"><span class="pk" aria-hidden="true">P</span></a>';
+  }
+
+  function cardHtml(it, isNow, vm) {
+    var k = KIND[it.kind] || 'activity';
+    var plain = !it.info.length && !(it.details || []).some(function (d) { return d.heading; }) && vm.notes.length <= 2 && !vm.parking;
+    var route = safeUrl(vm.route);
+    if ((it.kind === 'Drive' || it.kind === 'Flight' || it.kind === 'Ferry' || it.kind === 'Hotel') && plain) {
+      var lines = [];
+      if (it.drive && !vm.pulled) lines.push(esc(it.drive + byMode(it)));
+      vm.details.forEach(function (d) { lines.push(segsHtml(d.segs)); });
+      vm.notes.forEach(function (n) { lines.push(segsHtml(n.segs)); });
+      return '<div class="mini' + (isNow ? ' now' : '') + '">' + icon(k, 20) +
+        '<div class="mt"><div class="mn">' + esc(it.name) + '</div>' + lines.map(function (l) { return '<div class="ms">' + l + '</div>'; }).join('') + '</div>' +
+        (route ? '<a class="ic" href="' + esc(route) + '" target="_blank" rel="noopener" aria-label="Route for ' + esc(it.name) + '">' + icon('route', 18) + '</a>' : '') +
+        '</div>';
+    }
+    var label = it.meal ? it.meal : (it.kind === 'Shopping' ? 'Shopping' : it.kind);
+    var pills = [];
+    if (it.optional) pills.push('<span class="pill optional">Optional</span>');
+    (it.tags || []).forEach(function (t) { pills.push('<span class="pill bookable">' + esc(t.charAt(0) + t.slice(1).toLowerCase()) + '</span>'); });
+    if (it.status) pills.push('<span class="pill ' + it.status + '">' + STATUS[it.status] + '</span>');
+    var h = '<article class="card' + (isNow ? ' now' : '') + '">' +
+      '<div class="cardtop"><span class="kind">' + icon(k, 14) + esc(label) + '</span><span class="pills">' + pills.join('') + '</span></div>';
+    if (!(it.meal && it.name === it.meal)) h += '<div class="name">' + esc(it.name) + '</div>';
+    h += factsHtml(vm.info);
+    h += detailsHtml(vm.details);
+    var acts = [];
+    if (vm.pulled) { /* the drive has its own row above the card */ }
+    else if (route) acts.push('<a class="btn primary" href="' + esc(route) + '" target="_blank" rel="noopener">' + icon('route') + esc(vm.routeLabel || 'Route') + '</a>');
+    else if (it.drive) acts.push('<span class="drive-chip">' + icon('drive') + esc(it.drive + byMode(it)) + '</span>');
+    if (vm.parking && safeUrl(vm.parking.url)) acts.push(parkBtn(vm.parking));
+    if (safeUrl(vm.pin)) acts.push('<a class="btn" href="' + esc(vm.pin) + '" target="_blank" rel="noopener">' + icon('pin') + 'Maps</a>');
+    if (acts.length) h += '<div class="actions">' + acts.join('') + '</div>';
+    if (vm.notes.length) h += '<details class="more"><summary>Getting there & notes</summary>' + notesHtml(vm.notes) + '</details>';
+    if (vm.backups.length) {
+      var nb = vm.backups.filter(function (b) { return !b.earlier; }).length, ne = vm.backups.length - nb;
+      var sum = [];
+      if (nb) sum.push(nb === 1 ? 'Backup option' : nb + ' backup options');
+      if (ne) sum.push(ne === 1 ? (nb ? '1 earlier pick' : 'Earlier pick') : ne + ' earlier picks');
+      h += '<details class="more"><summary>' + sum.join(' · ') + '</summary>' +
+        vm.backups.map(function (b) {
+          return '<div class="backup"><div class="cardtop"><span class="bname">' + esc(b.name) + '</span>' + '<span class="pills">' + (b.earlier ? '<span class="pill optional">Earlier pick</span>' : '') + (b.status ? '<span class="pill ' + b.status + '">' + STATUS[b.status] + '</span>' : '') + '</span></div>' +
+            factsHtml(b.info) + detailsHtml(b.details) +
+            (safeUrl(b.pin) ? '<div class="actions"><a class="btn" href="' + esc(b.pin) + '" target="_blank" rel="noopener">' + icon('pin') + 'Maps</a></div>' : '') + '</div>';
+        }).join('') + '</details>';
+    }
+    return h + '</article>';
+  }
+
+  // Travel row pulled out of a stop: same look as a Drive row, with the route button for that stop
+  function legHtml(it, vm) {
+    var mode = it.travel || 'Drive', route = safeUrl(vm.route);
+    var to = /^(breakfast|lunch|dinner|snack)$/i.test(it.name) ? it.name.toLowerCase()
+      : /hotel/i.test(it.name) && it.kind === 'Hotel' ? 'hotel' : it.name.replace(/\s*\([^)]*\)\s*$/, '');
+    return '<div class="mini">' + icon('drive', 20) +
+      '<div class="mt"><div class="mn">' + esc(mode + ' to ' + to) + '</div><div class="ms">' + esc(it.drive + byMode(it)) + '</div></div>' +
+      (route ? '<a class="ic" href="' + esc(route) + '" target="_blank" rel="noopener" aria-label="Route to ' + esc(it.name) + '">' + icon('route', 18) + '</a>' : '') +
+      '</div>';
+  }
+
+  function renderPlan() {
+    var d = days.filter(function (x) { return x.date === state.day; })[0] || days[0];
+    var idx = days.indexOf(d);
+    var today = tokyoToday();
+    var isToday = d.date === today;
+    var drive = d.items.reduce(function (a, it) { return a + driveMins(it.drive); }, 0);
+    var todo = dayTodo(d);
+    var nowIdx = -1;
+    if (isToday) {
+      var nm = tokyoMinutes();
+      d.items.forEach(function (it, k) { if (it.time) { var a = it.time.split(':'); if ((+a[0]) * 60 + (+a[1]) <= nm) nowIdx = k; } });
+    }
+    var meta = [];
+    if (isToday) meta.push('<span class="meta today">Today</span>');
+    if (drive) meta.push('<span class="meta">' + icon('drive', 14) + 'About ' + fmtMins(drive) + ' ' + travelWord(d.items) + '</span>');
+    if (todo) meta.push('<span class="meta todo">' + icon('alert', 14) + todo + ' to book</span>');
+    var h = '<section class="dayhead"><h2>' + esc(d.weekday) + ', ' + esc(d.label) + '</h2>' +
+      '<div class="daymeta"><span class="meta">Day ' + (idx + 1) + ' of ' + days.length + '</span>' + meta.join('') + '</div></section>';
+    var vms = d.items.map(prepItem);
+    // a drive row straight before a stop with first-choice parking routes to that parking
+    vms.forEach(function (vm, k) {
+      var nx = vms[k + 1];
+      if (d.items[k].kind === 'Drive' && vm.route && nx && nx.parking && !nx.parking.backup && !nx.ownRoute) {
+        vm.route = routeTo(d.items[k].directions, placeDest(nx.parking.url, nx.parking.name));
+      }
+    });
+    h += '<div class="timeline">' + d.items.map(function (it, k) {
+      // a stop's travel time ("Drive:" / "Grab:" / "Taxi:" line) gets its own row above it, like the doc's Drive rows
+      var pre = '';
+      if (it.drive && it.kind !== 'Drive') { vms[k].pulled = true; pre = '<div class="row"><div class="time empty"></div>' + legHtml(it, vms[k]) + '</div>'; }
+      return pre + '<div class="row"><div class="time' + (it.time ? '' : ' empty') + '">' + esc(it.time) + '</div>' + cardHtml(it, k === nowIdx, vms[k]) + '</div>';
+    }).join('') + '</div>';
+    return h;
+  }
+
+  /* ---------- trip ---------- */
+  function offsetText() {
+    try {
+      var d = new Date(days.length ? days[0].date + 'T12:00:00Z' : Date.now());
+      function off(tz) { var p = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(d), o = {}; p.forEach(function (x) { o[x.type] = +x.value; }); return (Date.UTC(o.year, o.month - 1, o.day, o.hour % 24, o.minute) - d.getTime()) / 36e5; }
+      var diff = Math.round((off(TZ) - off('Asia/Singapore')) * 2) / 2, who = META.place || 'Local time', n = Math.abs(diff);
+      if (!diff) return 'Times are local, the same as Singapore.';
+      return 'Times are local. ' + who + ' is ' + n + (n === 1 ? ' hour ' : ' hours ') + (diff > 0 ? 'ahead of' : 'behind') + ' Singapore.';
+    } catch (e) { return 'Times are local.'; }
+  }
+  function nights(a, b) { return Math.round((new Date(b) - new Date(a)) / 864e5); }
+  function airport(s) { return s.replace(/^(departure|depart|arrival|arrive)\s+(from|at|in|to)\s+/i, '').replace(/\s+airport$/i, '').trim(); }
+  function flightLegs(F) {
+    var legs = [], i = 0;
+    while (i < F.length) {
+      var f = F[i], g = F[i + 1];
+      if (/^depart/i.test(f.name) && g && /^arriv/i.test(g.name)) {
+        legs.push({ from: airport(f.name), to: airport(g.name), dep: f, arr: g, code: [f.detail, g.detail].filter(Boolean).join(' ') });
+        i += 2;
+      } else {
+        legs.push({ single: f }); i += 1;
+      }
+    }
+    return legs;
+  }
+  function overviewHtml(T) {
+    var P = DATA.plan, h = '';
+    var first = days[0], last = days[days.length - 1];
+    var n = first && last ? nights(first.date, last.date) : 0;
+    var who = ((DATA.expenses && DATA.expenses.by_person) || []).map(function (p) { return p.name; }).filter(Boolean);
+    var cars = T.car ? (T.car.notes || []).concat(T.car.lines || []).join(' ').match(/(\d+)\s+cars?\b/i) : null;
+    h += '<section class="section"><h3>Overview</h3>';
+    if (P.title) h += '<div class="ov-title">' + esc(P.title) + '</div>';
+    if (first && last) h += '<p class="hint" style="margin:0">' + esc(rangeText(first.date, last.date)) + (META.place ? ' · ' + esc(META.place) : '') + '</p>';
+    if ((P.intro || []).length) h += '<div class="ov-intro">' + P.intro.map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') + '</div>';
+    h += '<div class="stats">' +
+      '<div class="stat"><b>' + days.length + '</b><span>days · ' + n + ' nights</span></div>' +
+      '<div class="stat"><b>' + T.hotels.length + '</b><span>' + (T.hotels.length === 1 ? 'hotel' : 'hotels') + '</span></div>' +
+      '<div class="stat"><b>' + (who.length || '–') + '</b><span>travellers</span></div>' +
+      '</div>';
+    if (who.length) h += '<div class="who-row">' + who.map(function (w) { return '<span class="meta">' + esc(w) + '</span>'; }).join('') + '</div>';
+    if (cars) h += '<p class="hint" style="margin:0">' + esc(cars[1]) + ' rental cars for the trip.</p>';
+    h += '<div class="doclinks">' +
+      '<a class="btn primary" href="' + DOC_URL + '" target="_blank" rel="noopener">' + icon('cal', 16) + 'Itinerary doc</a>' +
+      '<a class="btn primary" href="' + SHEET_URL + '" target="_blank" rel="noopener">' + icon('ticket', 16) + 'Expense sheet</a>' +
+      '</div><p class="hint" style="margin:0">The full documents in Google Drive. This app reads them live.</p></section>';
+    return h;
+  }
+  function renderTrip() {
+    var T = DATA.trip, h = overviewHtml(T);
+    var legs = flightLegs(T.flights);
+    legs.forEach(function (l) {
+      var fs = l.single ? [l.single] : [l.dep, l.arr];
+      l.ferry = FERRY_RE.test(fs.map(function (f) { return f.name + ' ' + (f.detail || ''); }).join(' '));
+    });
+    var nFerry = legs.filter(function (l) { return l.ferry; }).length;
+    var travelHead = !nFerry ? 'Flights' : nFerry === legs.length ? 'Ferries' : 'Flights & ferries';
+    h += '<section class="section"><h3>' + travelHead + '</h3><div class="list">' + legs.map(function (l) {
+      if (l.single) {
+        var f = l.single;
+        return '<div class="li"><span class="t">' + esc(f.name) + '</span><span class="r">' + esc(f.weekday + ' ' + f.date) + ' · ' + esc(f.time) + '</span>' + (f.detail ? '<span class="s">' + esc(f.detail) + '</span>' : '') + '</div>';
+      }
+      var sameDay = l.dep.date === l.arr.date;
+      return '<div class="leg"><span class="lh">' + esc(l.from) + icon('arrow', 14) + esc(l.to) + '</span>' +
+        '<span class="ld">' + esc(l.dep.weekday + ' ' + l.dep.date) + '</span>' +
+        '<span class="lt">' + esc(l.dep.time) + icon(l.ferry ? 'ferry' : 'flight', 16) + esc(l.arr.time) + (sameDay ? '' : '<span class="dur">' + esc(l.arr.weekday + ' ' + l.arr.date) + '</span>') +
+        '</span>' +
+        (l.code ? '<span class="lc">' + esc(l.code) + '</span>' : '') + '</div>';
+    }).join('') + '</div><p class="hint">' + esc(offsetText()) + '</p></section>';
+
+    var hotelDates = T.hotels.map(function (x) { return days.filter(function (d) { return d.label === x.date; })[0]; });
+    h += '<section class="section"><h3>Hotels</h3><div class="list">' + T.hotels.map(function (x, k) {
+      var start = hotelDates[k] ? hotelDates[k].date : null;
+      var end = hotelDates[k + 1] ? hotelDates[k + 1].date : days[days.length - 1].date;
+      var n = start ? nights(start, end) : null;
+      return '<div class="li"><span class="t">' + esc(x.name) + '</span><span class="r">' + (n ? n + (n === 1 ? ' night' : ' nights') : '') + '</span>' +
+        '<span class="s">Check in ' + esc(x.weekday + ' ' + x.date) + (x.notes.length ? ' · ' + esc(x.notes.join(' · ')) : '') + '</span></div>';
+    }).join('') + '</div></section>';
+
+    if (T.car) {
+      h += '<section class="section"><h3>Car rental</h3><div class="list">' +
+        '<div class="li"><span class="t">Pick up</span><span class="r">' + esc(T.car.weekday + ' ' + T.car.date) + '</span><span class="s">' + esc(T.car.lines.join(' · ')) + '</span></div>' +
+        (T.car['return'] ? '<div class="li"><span class="t">Return</span><span class="r">' + esc(T.car['return']) + '</span></div>' : '') +
+        '</div><details class="more"><summary>Pickup notes</summary><ul class="notes">' + T.car.notes.reduce(function (a, n) {
+          var last = a[a.length - 1];
+          if (last !== undefined && /:$/.test(last.trim()) && !/:$/.test(n.trim())) a[a.length - 1] = last.trim() + ' ' + n; else a.push(n);
+          return a;
+        }, []).map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></details></section>';
+    }
+
+    var B = DATA.boot;
+    if (B && B.url) {
+      var ksq = B.ks ? '&ks=' + encodeURIComponent(B.ks) : '';
+      var others = (B.trips || []).filter(function (t) { return t.key !== META.key; }).slice().reverse();
+      h += '<section class="section"><h3>Other trips</h3>' + (others.length ? '<div class="list">' + others.map(function (t) {
+        return '<div class="li"><a class="t" href="' + esc(B.url + '?trip=' + encodeURIComponent(t.key) + ksq) + '" target="_top">' + esc(t.name) + '</a><span class="r">' + esc(rangeText(t.start, t.end)) + '</span></div>';
+      }).join('') + '</div>' : '') +
+        '<p class="hint"><a href="' + esc(B.url + '?add=1' + ksq) + '" target="_top">Open another trip with its PIN</a></p>' +
+        (B.launcher ? '<p class="hint"><a href="' + esc(B.launcher + '?setup=1' + ksq) + '"' + (B.pages ? '' : ' target="_blank" rel="noopener"') + '>Add OOO to Home Screen</a> (' + (B.pages ? 'after unlocking all your trips' : 'open in Safari, after unlocking all your trips') + ')</p>' : '') +
+        '</section>';
+    }
+    return h;
+  }
+
+  /* ---------- expenses ---------- */
+  function renderExpenses() {
+    var E = DATA.expenses, cur = E.currency || 'SGD', h = '';
+    var list = state.settle === 'groups' ? E.settle_groups : E.settle_people;
+    h += '<section class="section"><h3>Settle up</h3>' +
+      '<div class="seg" role="group" aria-label="Settle by"><button type="button" id="seg-groups" data-settle="groups" aria-pressed="' + (state.settle === 'groups') + '">By group</button><button type="button" id="seg-people" data-settle="people" aria-pressed="' + (state.settle === 'people') + '">By person</button></div>' +
+      '<div class="list">' + (list.length ? list.map(function (p) {
+        return '<div class="pay"><span class="who">' + esc(p.from) + '<span class="arrow">' + icon('arrow', 14) + '</span>' + esc(p.to) + '</span><span class="amt">' + money(p.amount) + '</span></div>';
+      }).join('') : '<div class="pay"><span class="who">Everyone is square.</span></div>') + '</div><p class="hint">Amounts in ' + esc(cur) + '. Payments logged as Settlement payment are already counted.</p></section>';
+
+    var bal = state.settle === 'groups' ? E.by_group : E.by_person.filter(function (p) { return p.paid || p.owed; });
+    var maxAbs = bal.reduce(function (a, p) { return Math.max(a, Math.abs(p.net)); }, 0) || 1;
+    h += '<section class="section"><h3>Balances</h3><p class="hint">Green is owed money, red owes.</p><div>' + bal.map(function (p) {
+      var w = Math.abs(p.net) / maxAbs * 50, cls = p.net >= 0 ? 'pos' : 'neg';
+      return '<div class="bal"><span class="bn">' + esc(p.name) + '</span><span class="bt"><span class="bf ' + cls + '" style="width:' + w.toFixed(1) + '%"></span></span><span class="bv ' + cls + '">' + (p.net > 0 ? '+' : '') + money(p.net) + '</span></div>';
+    }).join('') + '</div><details class="more"><summary>Paid and owed</summary><div class="list">' + bal.map(function (p) {
+      return '<div class="li"><span class="t">' + esc(p.name) + '</span><span class="r">paid ' + money(p.paid) + ' · share ' + money(p.owed) + '</span></div>';
+    }).join('') + '</div></details></section>';
+
+    var cats = E.by_category.filter(function (c) { return c.total > 0; }).sort(function (a, b) { return b.total - a.total; });
+    var maxC = cats.reduce(function (a, c) { return Math.max(a, c.total); }, 0) || 1;
+    h += '<section class="section"><h3>By category</h3><p class="hint">' + money(E.total_spend) + ' ' + esc(cur) + ' spent so far across ' + E.count + ' expense' + (E.count === 1 ? '' : 's') + '. The full log is in the <a href="' + SHEET_URL + '" target="_blank" rel="noopener">expense sheet</a>.</p><div>' + (cats.length ? cats.map(function (c) {
+      return '<div class="cat"><span>' + esc(c.name) + '</span><span class="cv">' + money(c.total) + ' · ' + Math.round(c.share) + '%</span><span class="cb"><i style="width:' + (c.total / maxC * 100).toFixed(1) + '%"></i></span></div>';
+    }).join('') : '<p class="hint">Nothing logged yet.</p>') + '</div></section>';
+
+    return h;
+  }
+
+  /* ---------- inbox: chat-style requests that Claude applies on a schedule ---------- */
+  var CAN_RUN = canCallServer();
+  function travellers() { return ((DATA.expenses && DATA.expenses.by_person) || []).map(function (p) { return p.name; }).filter(Boolean); }
+  var STATUS_CLS = { done: 'booked', pending: 'to_book', 'needs jy': 'to_book', waiting: 'bookable', skipped: 'walk_in' };
+  function snip(t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
+  function inboxRow(r) { return (state.inbox || []).filter(function (m) { return m.row === r; })[0]; }
+  function renderInbox() {
+    if (!CAN_RUN) return '<section class="section"><h3>Inbox</h3><p class="hint">The inbox works in the web app link only.</p></section>';
+    var names = travellers();
+    if (!state.me || names.indexOf(state.me) < 0) {
+      return '<section class="section"><h3>Who are you?</h3><p class="hint">Pick your name once. Your messages are sent under it.</p><div class="who">' +
+        names.map(function (n) { return '<button type="button" class="btn" data-me="' + esc(n) + '">' + esc(n) + '</button>'; }).join('') + '</div></section>';
+    }
+    var h = '<form class="section ibx-form" id="ibx-form"><h3>Send to the trip inbox</h3>' +
+      '<p class="hint">Type it like a chat. For example: "¥3,200 ramen dinner, paid by ' + esc(names[0] || 'me') + ', split everyone" or "Move Fri lunch to 1pm".</p>' +
+      (state.replyTo && inboxRow(state.replyTo) ? '<div class="ibx-re"><span>Replying to <b>' + esc(inboxRow(state.replyTo).from) + '</b>: ' + esc(snip(inboxRow(state.replyTo).reply || inboxRow(state.replyTo).text, 90)) + '</span><button type="button" class="linkbtn" data-ibx-cancel>cancel</button></div>' : '') +
+      '<label for="ibx-text" class="sr">Message</label><textarea id="ibx-text" maxlength="1500" placeholder="Expense, change or comment"></textarea>' +
+      '<div class="ibx-row"><span class="hint" style="margin:0">Sending as <b>' + esc(state.me) + '</b> · <button type="button" class="linkbtn" data-me-change>change</button></span>' +
+      '<button type="submit" class="btn primary" id="ibx-send"' + (state.sending ? ' disabled' : '') + '>' + (state.sending ? 'Sending…' : 'Send') + '</button></div>' +
+      '<p class="hint" id="ibx-msg" role="status" aria-live="polite">' + esc(state.inboxMsg || '') + '</p>' +
+      '<p class="hint" style="margin:0;font-size:12px"><i>Note: Requests are applied hourly</i></p></form>';
+    if (state.inbox === null) { loadInbox(); return h + '<section class="section"><p class="hint">Loading messages…</p></section>'; }
+    var list = state.inbox.slice().reverse();
+    h += '<section class="section"><h3>Messages</h3>' + (list.length ? '<div>' + list.map(function (m) {
+      var st = String(m.status || 'Waiting');
+      var orig = m.re ? inboxRow(m.re) : null, pend = st.toLowerCase() === 'pending';
+      return '<div class="msg"><div class="mh"><span><b>' + esc(m.from) + '</b> · ' + esc(m.time) + '</span><span class="pill ' + (STATUS_CLS[st.toLowerCase()] || 'bookable') + '">' + esc(st) + '</span></div>' +
+        (orig ? '<div class="mq">↪ Re ' + esc(orig.from) + ': ' + esc(snip(orig.text, 80)) + '</div>' : '') +
+        '<div class="mt">' + esc(m.text) + '</div>' + (m.reply ? '<div class="mr">' + esc(m.reply) + '</div>' : '') +
+        (pend ? '<div class="mact"><button type="button" class="linkbtn" data-ibx-re="' + m.row + '">Reply</button></div>' : '') + '</div>';
+    }).join('') + '</div>' : '<p class="hint">No messages yet.</p>') + '</section>';
+    return h;
+  }
+  var inboxLoading = false;
+  function loadInbox() {
+    if (inboxLoading || !CAN_RUN || !window.__tripCred) return;
+    inboxLoading = true;
+    callServer('getInbox', [window.__tripKey || META.key, window.__tripCred],
+      function (json) { inboxLoading = false; state.inbox = JSON.parse(json); if (state.tab === 'inbox') render(); },
+      function () { inboxLoading = false; state.inbox = state.inbox || []; state.inboxMsg = "Couldn't load messages. Pull down to try again."; if (state.tab === 'inbox') render(); });
+  }
+  document.addEventListener('input', function (e) { if (e.target.id === 'ibx-text') state.draft = e.target.value; });
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'ibx-form') return;
+    e.preventDefault();
+    var text = (state.draft || '').trim();
+    if (!text || state.sending) return;
+    state.sending = true; state.inboxMsg = ''; render();
+    callServer('postInbox', [window.__tripKey || META.key, window.__tripCred, state.me, text, state.replyTo || 0],
+      function (json) { state.sending = false; state.draft = ''; state.replyTo = 0; state.inbox = JSON.parse(json); state.inboxMsg = 'Sent. It will be applied within about an hour.'; render(); },
+      function (err) {
+        state.sending = false;
+        state.inboxMsg = /busy/.test(String(err && err.message || err)) ? 'Too many messages just now. Try again in a few minutes.' : "Couldn't send. Check your connection and try again.";
+        render();
+      });
+  });
+
+  /* ---------- shell ---------- */
+  function refreshedText() {
+    try {
+      var d = new Date(DATA.generated_at);
+      return (LIVE ? 'Loaded ' : 'Updated ') + new Intl.DateTimeFormat('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(d) + ' ' + PLACE_TIME;
+    } catch (e) { return 'Updated ' + DATA.generated_at; }
+  }
+  function render() {
+    var titles = { plan: 'Plan', trip: 'Trip', expenses: 'Expenses', inbox: 'Inbox' };
+    document.getElementById('title').textContent = titles[state.tab];
+    document.getElementById('sub').textContent = refreshedText();
+    ['plan', 'trip', 'expenses', 'inbox'].forEach(function (t) {
+      var a = document.getElementById('tab-' + t);
+      if (t === state.tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    renderDays();
+    if (state.tab === 'inbox') { view.innerHTML = renderInbox(); var ta = document.getElementById('ibx-text'); if (ta) ta.value = state.draft || ''; return; }
+    var body = state.tab === 'plan' ? renderPlan() : state.tab === 'trip' ? renderTrip() : renderExpenses();
+    body += '<div class="foot"><span>' + esc(refreshedText()) + (LIVE ? '. Read live from the itinerary doc and expense sheet; pull down to refresh.' : ' from the itinerary doc and expense sheet. Refreshes each morning and evening.') + '</span>' +
+      '<span><a href="' + DOC_URL + '" target="_blank" rel="noopener">Itinerary doc</a> · <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Expense sheet</a></span></div>';
+    view.innerHTML = body;
+  }
+  function fromHash() {
+    var h = (location.hash || '').replace('#', '');
+    state.tab = (h === 'trip' || h === 'expenses' || h === 'inbox') ? h : 'plan';
+  }
+  function pickDay() {
+    var today = tokyoToday();
+    var saved = store(SK + 'day');
+    var savedOn = store(SK + 'day-set');
+    if (days.some(function (d) { return d.date === today; }) && savedOn !== today) return today;
+    if (saved && days.some(function (d) { return d.date === saved; })) return saved;
+    return days.some(function (d) { return d.date === today; }) ? today : days[0].date;
+  }
+
+  function goTab(t) {
+    state.tab = t;
+    try { history.replaceState(null, '', '#' + t); } catch (err) {}
+    render(); window.scrollTo(0, 0);
+  }
+  document.addEventListener('click', function (e) {
+    var nav = e.target.closest('nav.tabbar a, #tab-inbox');
+    if (nav) { e.preventDefault(); goTab(nav.getAttribute('href').slice(1)); return; }
+    var b = e.target.closest('[data-day]');
+    if (b) { state.day = b.getAttribute('data-day'); store(SK + 'day', state.day); store(SK + 'day-set', tokyoToday()); render(); window.scrollTo(0, 0); return; }
+    var g = e.target.closest('[data-goto]');
+    if (g && g.getAttribute('data-goto')) { state.day = g.getAttribute('data-goto'); store(SK + 'day', state.day); store(SK + 'day-set', tokyoToday()); goTab('plan'); return; }
+    var me = e.target.closest('[data-me]');
+    if (me) { state.me = me.getAttribute('data-me'); store(SK + 'me', state.me); render(); return; }
+    if (e.target.closest('[data-me-change]')) { state.me = null; render(); return; }
+    var rr = e.target.closest('[data-ibx-re]');
+    if (rr) { state.replyTo = Number(rr.getAttribute('data-ibx-re')) || 0; render(); window.scrollTo(0, 0); var t = document.getElementById('ibx-text'); if (t) t.focus(); return; }
+    if (e.target.closest('[data-ibx-cancel]')) { state.replyTo = 0; render(); return; }
+    var s = e.target.closest('[data-settle]');
+    if (s) { state.settle = s.getAttribute('data-settle'); store(SK + 'settle', state.settle); render(); return; }
+  });
+  window.addEventListener('hashchange', function () { fromHash(); render(); window.scrollTo(0, 0); });
+
+  state.day = pickDay();
+  state.settle = store(SK + 'settle') === 'people' ? 'people' : 'groups';
+  state.me = store(SK + 'me');
+  fromHash();
+  render();
+
+  /* ---------- pull down to refresh ---------- */
+  window.__tripApp = {
+    update: function (nd) {
+      nd.boot = nd.boot || DATA.boot;
+      markFerries(nd.plan && nd.plan.days);
+      DATA = nd; days = DATA.plan.days; LIVE = DATA.mode === 'live';
+      if (!days.some(function (d) { return d.date === state.day; })) state.day = pickDay();
+      if (state.tab === 'inbox') { state.inboxMsg = ''; loadInbox(); }
+      var y = window.scrollY; render(); window.scrollTo(0, y);
+    }
+  };
+  var ptr = document.getElementById('ptr'), ptrT = document.getElementById('ptr-t');
+  var PULL = 80, startY = null, startX = 0, pull = 0, busy = false;
+  function ptrShow(d) {
+    ptr.className = 'ptr' + (d >= PULL ? ' ready' : '');
+    ptr.style.transform = 'translate(-50%, ' + (Math.min(d, PULL + 20) * 0.8 - 60) + 'px)';
+    ptr.style.opacity = String(Math.min(1, d / PULL));
+    ptrT.textContent = d >= PULL ? 'Release to refresh' : 'Pull to refresh';
+  }
+  function ptrHide() { ptr.className = 'ptr done'; ptr.style.transform = ''; ptr.style.opacity = ''; }
+  function doRefresh() {
+    busy = true; ptr.className = 'ptr busy'; ptr.style.transform = ''; ptr.style.opacity = ''; ptrT.textContent = 'Refreshing…';
+    function finish(text) { ptrT.textContent = text; setTimeout(function () { busy = false; ptrHide(); }, text === 'Updated' ? 600 : 2200); }
+    if (!(canCallServer() && window.__tripCred)) { location.reload(); return; }
+    callServer('refreshTrip', [window.__tripKey || META.key, window.__tripCred],
+      function (json) { var nd = JSON.parse(json); if (window.__tripSaveLast) window.__tripSaveLast(nd); window.__tripApp.update(nd); finish('Updated'); },
+      function () { finish("Couldn't refresh. Check your connection."); });
+  }
+  document.addEventListener('touchstart', function (e) {
+    startY = (!busy && window.scrollY <= 0 && e.touches.length === 1) ? e.touches[0].clientY : null;
+    if (startY !== null) startX = e.touches[0].clientX;
+    pull = 0;
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (startY === null) return;
+    var dy = e.touches[0].clientY - startY, dx = Math.abs(e.touches[0].clientX - startX);
+    if (dy <= 0 || dx > dy || window.scrollY > 0) { if (pull) ptrHide(); startY = null; pull = 0; return; }
+    pull = dy * 0.6; ptrShow(pull);
+  }, { passive: true });
+  document.addEventListener('touchend', function () {
+    if (startY === null) return;
+    startY = null;
+    if (pull >= PULL) doRefresh(); else if (pull) ptrHide();
+    pull = 0;
+  });
+}
+
+/* ---------- PIN gate (Apps Script build: data is fetched only after the PIN checks out) ---------- */
+(function () {
+  'use strict';
+  var raw = document.getElementById('trip-data').textContent.trim();
+  if (raw && raw !== 'null') { startApp(JSON.parse(raw)); return; }
+  var boot = null;
+  try { boot = JSON.parse(document.getElementById('trip-boot').textContent.trim() || 'null'); } catch (e) {}
+  // GitHub Pages copy: the page is static, so it reads the link itself and talks to Apps Script's JSON API
+  if (boot && boot.api) {
+    var q = new URLSearchParams(location.search), ksMap = {};
+    String(q.get('ks') || '').split(',').slice(0, 30).forEach(function (part) {
+      var m = /^([A-Za-z0-9_.-]{1,64}):([A-Za-z0-9_-]{16,64})$/.exec(part.trim());
+      if (m) ksMap[m[1]] = m[2];
+    });
+    var here = location.origin + location.pathname;
+    window.__api = boot.api;
+    boot = { api: boot.api, pages: true, url: here, launcher: here, any: true,
+      trip: /^[A-Za-z0-9_.-]{1,64}$/.test(q.get('trip') || '') ? q.get('trip') : null,
+      k: /^[A-Za-z0-9_-]{16,64}$/.test(q.get('k') || '') ? q.get('k') : null,
+      ks: ksMap, add: q.get('add') === '1', setup: q.get('setup') === '1' };
+  }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
+  function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var view = document.getElementById('view');
+  document.getElementById('days').hidden = true;
+  document.querySelector('nav.tabbar').hidden = true;
+  document.getElementById('eyebrow').textContent = 'Trips';
+  document.getElementById('title').textContent = 'OOO';
+  if (!boot || !boot.any) {
+    document.getElementById('sub').textContent = '';
+    view.innerHTML = '<div class="section gate"><h3>No trip set up yet</h3><p class="hint">Ask JY to add the trip to the web app.</p></div>';
+    return;
+  }
+  // Trips this device has unlocked before: localStorage 'trip-<key>-pin' holds 'k:<key>'. Only these are ever listed.
+  function savedCreds() {
+    var out = {};
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var m = /^trip-(.+)-pin$/.exec(localStorage.key(i) || '');
+        var v = m ? localStorage.getItem(localStorage.key(i)) : '';
+        if (m && v && v.indexOf('k:') === 0) out[m[1]] = v;
+      }
+    } catch (e) {}
+    // keys carried in the link (ks=trip:key,...): a Home Screen icon forgets localStorage when closed
+    Object.keys(boot.ks || {}).forEach(function (k) { if (!out[k]) out[k] = 'k:' + boot.ks[k]; });
+    return out;
+  }
+  var want = boot.trip || '';
+  // App icon drawn inline (no image request, so it can't show as a broken image)
+  var LOGO = '<svg viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B5BC4"/><stop offset="1" stop-color="#1B2C66"/></linearGradient></defs>' +
+    '<rect width="512" height="512" fill="url(#lg)"/><g fill="none" stroke="#fff" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"><path d="M206 168v-26a20 20 0 0 1 20-20h60a20 20 0 0 1 20 20v26"/><rect x="126" y="168" width="260" height="200" rx="34"/><path d="M196 168v200M316 168v200"/></g>' +
+    '<circle cx="176" cy="396" r="14" fill="#fff"/><circle cx="336" cy="396" r="14" fill="#fff"/><path transform="translate(330 96) rotate(35)" d="M0 -44 L10 -10 L46 8 L46 20 L10 10 L6 34 L18 44 L18 52 L0 46 L-18 52 L-18 44 L-6 34 L-10 10 L-46 20 L-46 8 L-10 -10 Z" fill="#FFD27A"/></svg>';
+  view.innerHTML = '<div class="splash" id="splash" hidden>' + LOGO + '<h3>OOO</h3><p>Opening your trip…</p></div>' +
+    '<form class="section gate" id="gate" autocomplete="off">' +
+    '<h3>Open your trip</h3><p class="hint">Enter the PIN JY shared with you. This device remembers it after the first time.</p>' +
+    '<label for="pin" class="sr">Trip PIN</label>' +
+    '<input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN" required>' +
+    '<button type="submit" class="btn primary" id="unlock">Open trip</button>' +
+    '<p class="hint" id="gate-msg" role="status" aria-live="polite"></p></form>';
+  var form = document.getElementById('gate'), input = document.getElementById('pin'), msg = document.getElementById('gate-msg'), btn = document.getElementById('unlock');
+  var splash = document.getElementById('splash'), sub = document.getElementById('sub');
+  if (boot.setup) {
+    var keepQ = new URLSearchParams(location.search); keepQ.delete('setup');
+    try { history.replaceState(null, '', location.pathname + (keepQ.toString() ? '?' + keepQ.toString() : '')); } catch (e) {}
+    view.insertAdjacentHTML('afterbegin', '<div class="section gate" id="hs-steps"><h3>Add OOO to your Home Screen</h3>' +
+      '<p class="hint">iPhone: tap the Share button in Safari, choose <b>Add to Home Screen</b>, then <b>Add</b>. Android: open the Chrome menu, then <b>Add to Home screen</b>.</p>' +
+      '<p class="hint">The icon opens every trip you have unlocked. Keep it to yourself: the link works like your PINs.</p>' +
+      '<p class="hint"><a href="' + esc(location.pathname + (keepQ.toString() ? '?' + keepQ.toString() : '')) + '">Done, open OOO</a></p></div>');
+    document.getElementById('days').hidden = true;
+    document.getElementById('gate').hidden = true;
+    sub.textContent = '';
+    return;
+  }
+  function showSplash(on) {
+    splash.hidden = !on; form.hidden = on;
+    sub.textContent = on ? '' : (boot.add ? 'Enter the PIN of the trip you want to add.' : 'Enter the trip PIN to open the plan.');
+  }
+  // Pages copy: the last trip opened on this device, shown at once next time while the server checks for changes
+  function saveLast(d) {
+    if (!boot.pages) return;
+    try { var c = JSON.parse(JSON.stringify(d)); delete c.boot; localStorage.setItem('ooo-last', JSON.stringify(c)); } catch (e) {}
+  }
+  function forgetLast() { store('ooo-last', null); }
+  window.__tripSaveLast = function (nd) { if (boot.pages) { try { var c = JSON.parse(localStorage.getItem('ooo-last') || 'null'); if (c && c.meta && nd.meta && c.meta.key === nd.meta.key) { nd.deviceKey = c.deviceKey; nd.mine = c.mine; nd.keys = c.keys; saveLast(nd); delete nd.mine; delete nd.keys; } } catch (e) {} } };
+  function lastCopy() {
+    if (!boot.pages || boot.add) return null;
+    var c = null; try { c = JSON.parse(localStorage.getItem('ooo-last') || 'null'); } catch (e) {}
+    if (!c || !c.meta || !c.deviceKey) return null;
+    var k = c.meta.key, creds = savedCreds();
+    // only a trip this device (or this link) still holds a key for, and the one the link asks for if it names one
+    if (want && want !== k) return null;
+    if (creds[k] !== 'k:' + c.deviceKey && !(want === k && boot.k === c.deviceKey)) return null;
+    return c;
+  }
+  var MSG = { wrong: "That PIN didn't work. Check it and try again.", locked: 'Too many wrong tries. Wait 10 minutes and try again.', setup: "This trip isn't set up yet. Ask JY." };
+  // Server answered with the trip: remember its keys, put them in the link, show it.
+  // A stale answer (last good copy from the cache) is shown at once, then refreshed in the background.
+  function opened(d, pin, saved) {
+    var key = d.meta.key;
+    var cred = d.deviceKey ? 'k:' + d.deviceKey : pin;
+    // forget saved keys that no longer work (that trip's PIN was changed)
+    var ok = {}; (d.mine || []).forEach(function (t) { ok[t.key] = 1; });
+    Object.keys(saved).forEach(function (k) { if (!ok[k]) store('trip-' + k + '-pin', null); });
+    // a PIN shared by several trips unlocks all of them: remember each one
+    Object.keys(d.keys || {}).forEach(function (k) { store('trip-' + k + '-pin', 'k:' + d.keys[k]); });
+    store('trip-' + key + '-pin', cred); window.__tripCred = cred; window.__tripKey = key;
+    // Put the trip and key in the page link, so a Home Screen icon added from here opens this trip without the PIN
+    // With several trips, the link carries all their keys (ks) and no trip, so the icon opens the current trip and lists the rest
+    var ks = Object.keys(d.keys || {}).map(function (k) { return k + ':' + d.keys[k]; }).join(',');
+    if (d.deviceKey && window.google && google.script && google.script.history) {
+      try {
+        google.script.history.replace(null, (d.mine || []).length > 1 ? { ks: ks } : { trip: key, k: d.deviceKey }, '');
+      } catch (e) {}
+    } else if (d.deviceKey && boot.pages) {
+      var lq = (d.mine || []).length > 1 ? '?ks=' + encodeURIComponent(ks).replace(/%3A/g, ':').replace(/%2C/g, ',') : '?trip=' + encodeURIComponent(key) + '&k=' + d.deviceKey;
+      try { history.replaceState(null, '', location.pathname + lq + location.hash); } catch (e) {}
+    }
+    var stale = d.stale;
+    if (!stale) saveLast(d);
+    d.boot = { url: boot.url, trips: d.mine || [], ks: ks, launcher: boot.launcher || '', pages: !!boot.pages };
+    delete d.mine; delete d.keys; delete d.stale;
+    startApp(d);
+    if (stale && canCallServer()) {
+      sub.textContent = 'Checking for changes…';
+      var all = savedCreds();
+      callServer('openTrip', [key, cred, all, false],
+        function (json) { if (json) opened(JSON.parse(json), cred, all); },
+        function (err) {
+          // the trip's PIN was changed since this copy was kept: drop it and ask again
+          if (boot.pages && /wrong|needpin|setup/.test(String(err && err.message || err))) { forgetLast(); store('trip-' + key + '-pin', null); location.replace(location.pathname); return; }
+          sub.textContent = "Couldn't check for changes. Pull down to refresh.";
+        });
+    }
+  }
+  function attempt(pin, auto) {
+    if (!canCallServer()) { showSplash(false); msg.textContent = 'Open this page from its web app link.'; return; }
+    var saved = savedCreds();
+    btn.disabled = true; msg.textContent = auto ? 'Opening…' : 'Checking…';
+    callServer('openTrip', [want, pin, saved, true],
+      function (json) { opened(JSON.parse(json), pin, saved); },
+      function (err) {
+        showSplash(false);
+        btn.disabled = false;
+        var m = String(err && err.message || err);
+        var key = m.indexOf('needpin') > -1 ? 'needpin' : m.indexOf('locked') > -1 ? 'locked' : m.indexOf('setup') > -1 ? 'setup' : m.indexOf('wrong') > -1 ? 'wrong' : null;
+        if (key === 'needpin') { msg.textContent = ''; input.focus(); return; }
+        if (key === 'wrong' && want && pin.indexOf('k:') === 0) store('trip-' + want + '-pin', null);
+        msg.textContent = key ? (auto && key === 'wrong' ? 'The saved PIN no longer works. Enter the new one, then add the page to your Home Screen again.' : MSG[key]) : 'Could not load the trip. Check your connection and try again.';
+        input.focus();
+      });
+  }
+  form.addEventListener('submit', function (e) { e.preventDefault(); var v = input.value.trim(); if (v) attempt(v, false); });
+  // Home Screen link carries its own key; otherwise try this device's saved keys (no PIN typed)
+  var first = boot.k && want ? 'k:' + boot.k : '';
+  if (boot.add) { showSplash(false); input.focus(); }
+  // the server already put the cached trip in the page (Home Screen link): show it now, refresh in the background
+  else if (boot.pre && boot.pre.meta) { var pre = boot.pre; pre.stale = true; opened(pre, first, savedCreds()); }
+  else if (lastCopy()) { var lc = lastCopy(); lc.stale = true; opened(lc, 'k:' + lc.deviceKey, savedCreds()); }
+  else if (first || Object.keys(savedCreds()).length) { showSplash(true); attempt(first, true); }
+  else showSplash(false), input.focus();
+})();
 </script>
-</body>
+
 </html>
