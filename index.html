@@ -237,6 +237,10 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .stat { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 0; min-width: 0; }
 .stat b { font-family: var(--font-display); font-size: 20px; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .stat span { font-size: 12px; color: var(--ink-3); font-weight: 500; }
+.stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.stats.two + .list .li:first-child { padding-top: 10px; }
+.stat .sm { font-size: 12px; color: var(--ink-2); font-weight: 500; margin-top: 4px; line-height: 1.3; }
+.stat .sm + .sm { margin-top: 1px; }
 .steps { margin: 0; padding: 0; list-style: none; counter-reset: st; display: flex; flex-direction: column; gap: 10px; }
 .steps li { counter-increment: st; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; color: var(--ink-2); }
 .steps li::before { content: counter(st); width: 26px; height: 26px; border-radius: 13px; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
@@ -1031,10 +1035,16 @@ function startApp(DATA) {
         if (last !== undefined && /:$/.test(last.trim()) && !/:$/.test(n.trim())) a[a.length - 1] = last.trim() + ' ' + n; else a.push(n);
         return a;
       }, []);
-      h += '<section class="section"><h3>Car rental</h3><div class="list">' +
-        (nCars || models.length || company ? '<div class="li"><span class="t">' + (nCars ? nCars + (nCars === 1 ? ' car' : ' cars') : 'Car') + '</span><span class="r">' + esc(company) + '</span>' +
-          (models.length ? '<span class="s">' + models.map(function (x) { return esc(x.name) + ' <span style="color:var(--ink-3)">' + esc(x.price) + '</span>'; }).join(' · ') + '</span>' : '') + '</div>' : '') +
-        (insurance ? '<div class="li"><span class="t">Insurance</span><span class="s">' + esc(insurance) + '</span></div>' : '') +
+      // cars and insurance as small cards, like the Overview stats
+      var ins = insurance ? /^(.*?)\s*insurance\b\s*(.*)$/i.exec(insurance) : null;
+      var insKind = ins && ins[1] && ins[1].split(/\s+/).length <= 2 ? ins[1].charAt(0).toUpperCase() + ins[1].slice(1) : (insurance ? 'Yes' : '');
+      var insRest = ins ? (ins[1] && insKind !== 'Yes' ? ins[2] : insurance) : '';
+      var cards = '';
+      if (nCars || models.length) cards += '<div class="stat"><b>' + (nCars || models.length) + '</b><span>' + ((nCars || models.length) === 1 ? 'car' : 'cars') + '</span>' +
+        models.map(function (x) { return '<span class="sm">' + esc(x.name) + '</span>'; }).join('') + '</div>';
+      if (insurance) cards += '<div class="stat"><b>' + esc(insKind) + '</b><span>insurance</span>' + (insRest ? '<span class="sm">' + esc(insRest) + '</span>' : '') + '</div>';
+      h += '<section class="section"><h3>Car rental</h3>' + (company ? '<p class="hint">' + esc(company) + '</p>' : '') +
+        (cards ? '<div class="stats two">' + cards + '</div>' : '') + '<div class="list">' +
         '<div class="li"><span class="t">Pick up</span><span class="r">' + esc(C.weekday + ' ' + C.date) + (ptime || C.time ? ' · ' + esc(ptime || C.time) : '') + '</span>' + (ploc ? '<span class="s">' + esc(ploc) + '</span>' : '') + '</div>' +
         (C['return'] ? '<div class="li"><span class="t">Return</span><span class="r">' + esc(retText(C['return'])) + '</span></div>' : '') +
         '</div>' + (notes.length ? '<details class="more"><summary>Notes</summary><ul class="notes">' + notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></details>' : '') + '</section>';
