@@ -237,6 +237,10 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .stat { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 0; min-width: 0; }
 .stat b { font-family: var(--font-display); font-size: 20px; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .stat span { font-size: 12px; color: var(--ink-3); font-weight: 500; }
+.stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.stats.two + .list .li:first-child { padding-top: 10px; }
+.stat .sm { font-size: 12px; color: var(--ink-2); font-weight: 500; margin-top: 4px; line-height: 1.3; }
+.stat .sm + .sm { margin-top: 1px; }
 .steps { margin: 0; padding: 0; list-style: none; counter-reset: st; display: flex; flex-direction: column; gap: 10px; }
 .steps li { counter-increment: st; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; color: var(--ink-2); }
 .steps li::before { content: counter(st); width: 26px; height: 26px; border-radius: 13px; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
@@ -995,12 +999,32 @@ function startApp(DATA) {
     }).join('') + '</div><p class="hint">' + esc(offsetText()) + '</p></section>';
 
     var hotelDates = T.hotels.map(function (x) { return days.filter(function (d) { return d.label === x.date; })[0]; });
+    // Check-in and check-out times come from the plan: the "Check-in to hotel" rows (same order as the hotels)
+    // and the first row mentioning check-out before the next hotel. No time in the doc: just the date.
+    var ins = [], outs = [];
+    days.forEach(function (d, di) { d.items.forEach(function (it) {
+      if (/^check-in to hotel/i.test(it.name || '')) ins.push({ di: di, time: it.time });
+      else if (/check[\s-]?out/i.test(it.name || '')) outs.push({ di: di, time: it.time });
+    }); });
+    function dayText(d) { return d ? d.weekday.slice(0, 3) + ' ' + d.label : ''; }
     h += '<section class="section"><h3>Hotels</h3><div class="list">' + T.hotels.map(function (x, k) {
       var start = hotelDates[k] ? hotelDates[k].date : null;
       var end = hotelDates[k + 1] ? hotelDates[k + 1].date : days[days.length - 1].date;
       var n = start ? nights(start, end) : null;
+      var ci = ins[k] || null, sdi = ci ? ci.di : days.indexOf(hotelDates[k]);
+      var edi = hotelDates[k + 1] ? days.indexOf(hotelDates[k + 1]) : days.length - 1;
+      var co = outs.filter(function (o) { return o.di > sdi && o.di <= edi; })[0] || null;
+      var outDay = co ? days[co.di] : days[edi];
+      // the hotel's own times win when the doc gives them ("Check-in: 3pm", "Check-out time: 11am")
+      var inT = ci && ci.time, outT = co && co.time, notes = [];
+      x.notes.forEach(function (t) {
+        var m = /^check[\s-]?(in|out)(?:\s+time)?\s*:\s*(.+)$/i.exec(String(t).trim());
+        if (m && m[1].toLowerCase() === 'in') inT = m[2]; else if (m) outT = m[2]; else notes.push(t);
+      });
       return '<div class="li"><span class="t">' + esc(x.name) + '</span><span class="r">' + (n ? n + (n === 1 ? ' night' : ' nights') : '') + '</span>' +
-        '<span class="s">Check in ' + esc(x.weekday + ' ' + x.date) + (x.notes.length ? ' · ' + esc(x.notes.join(' · ')) : '') + '</span></div>';
+        '<span class="s">Check in ' + esc(x.weekday + ' ' + x.date) + (inT ? ' · ' + esc(inT) : '') + '<br>' +
+        'Check out ' + esc(dayText(outDay)) + (outT ? ' · ' + esc(outT) : '') + '</span>' +
+        (notes.length ? '<span class="s" style="color:var(--ink-3)">' + esc(notes.join(' · ')) + '</span>' : '') + '</div>';
     }).join('') + '</div></section>';
 
     if (T.car) {
@@ -1031,10 +1055,16 @@ function startApp(DATA) {
         if (last !== undefined && /:$/.test(last.trim()) && !/:$/.test(n.trim())) a[a.length - 1] = last.trim() + ' ' + n; else a.push(n);
         return a;
       }, []);
-      h += '<section class="section"><h3>Car rental</h3><div class="list">' +
-        (nCars || models.length || company ? '<div class="li"><span class="t">' + (nCars ? nCars + (nCars === 1 ? ' car' : ' cars') : 'Car') + '</span><span class="r">' + esc(company) + '</span>' +
-          (models.length ? '<span class="s">' + models.map(function (x) { return esc(x.name) + ' <span style="color:var(--ink-3)">' + esc(x.price) + '</span>'; }).join(' · ') + '</span>' : '') + '</div>' : '') +
-        (insurance ? '<div class="li"><span class="t">Insurance</span><span class="s">' + esc(insurance) + '</span></div>' : '') +
+      // cars and insurance as small cards, like the Overview stats
+      var ins = insurance ? /^(.*?)\s*insurance\b\s*(.*)$/i.exec(insurance) : null;
+      var insKind = ins && ins[1] && ins[1].split(/\s+/).length <= 2 ? ins[1].charAt(0).toUpperCase() + ins[1].slice(1) : (insurance ? 'Yes' : '');
+      var insRest = ins ? (ins[1] && insKind !== 'Yes' ? ins[2] : insurance) : '';
+      var cards = '';
+      if (nCars || models.length) cards += '<div class="stat"><b>' + (nCars || models.length) + '</b><span>' + ((nCars || models.length) === 1 ? 'car' : 'cars') + '</span>' +
+        models.map(function (x) { return '<span class="sm">' + esc(x.name) + '</span>'; }).join('') + '</div>';
+      if (insurance) cards += '<div class="stat"><b>' + esc(insKind) + '</b><span>insurance</span>' + (insRest ? '<span class="sm">' + esc(insRest) + '</span>' : '') + '</div>';
+      h += '<section class="section"><h3>Car rental</h3>' + (company ? '<p class="hint">' + esc(company) + '</p>' : '') +
+        (cards ? '<div class="stats two">' + cards + '</div>' : '') + '<div class="list">' +
         '<div class="li"><span class="t">Pick up</span><span class="r">' + esc(C.weekday + ' ' + C.date) + (ptime || C.time ? ' · ' + esc(ptime || C.time) : '') + '</span>' + (ploc ? '<span class="s">' + esc(ploc) + '</span>' : '') + '</div>' +
         (C['return'] ? '<div class="li"><span class="t">Return</span><span class="r">' + esc(retText(C['return'])) + '</span></div>' : '') +
         '</div>' + (notes.length ? '<details class="more"><summary>Notes</summary><ul class="notes">' + notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></details>' : '') + '</section>';
@@ -1117,6 +1147,24 @@ function startApp(DATA) {
       return '<div class="cat"><span>' + esc(c.name) + '</span><span class="cv">' + m(c.total) + ' · ' + Math.round(c.share) + '%</span><span class="cb"><i style="width:' + (c.total / maxC * 100).toFixed(1) + '%"></i></span></div>';
     }).join('') : '<p class="hint">Nothing logged yet.</p>') + '</div></section>';
 
+    // Expenses list: newest first, 5 rows, then "Show all"
+    var tx = E.recent || [];
+    if (tx.length) {
+      var shown = state.txAll ? tx : tx.slice(0, 5);
+      var fmtIn = function (v, c) {
+        var dd = 2; try { dd = new Intl.NumberFormat('en', { style: 'currency', currency: c }).resolvedOptions().maximumFractionDigits; } catch (e) {}
+        return v.toLocaleString('en-SG', { minimumFractionDigits: dd, maximumFractionDigits: dd });
+      };
+      h += '<section class="section"><h3>Expenses</h3><div class="list">' + shown.map(function (x) {
+        var c = String(x.currency || base).toUpperCase(), same = c === cur;
+        var amt = same ? fmtIn(x.amount, c) : m(x.sgd || (c === base ? x.amount : 0));
+        var sub = [String(x.date || '').replace(/\s\d{4}$/, ''), x.category, x.paid_by ? 'paid by ' + x.paid_by : ''].filter(Boolean).join(' · ');
+        if (!same && c !== base && x.amount) sub += ' · ' + fmtIn(x.amount, c) + ' ' + c;
+        return '<div class="li"><span class="t">' + esc(x.desc) + '</span><span class="r">' + amt + '</span><span class="s">' + esc(sub) + '</span></div>';
+      }).join('') + '</div>' +
+        (tx.length > 5 ? '<button type="button" class="btn" data-tx-all style="justify-content:center">' + (state.txAll ? 'Show less' : 'Show more') + '</button>' : '') + '</section>';
+    }
+
     return h;
   }
 
@@ -1195,8 +1243,7 @@ function startApp(DATA) {
     renderDays();
     if (state.tab === 'inbox') { view.innerHTML = renderInbox(); var ta = document.getElementById('ibx-text'); if (ta) ta.value = state.draft || ''; return; }
     var body = state.tab === 'plan' ? renderPlan() : state.tab === 'trip' ? renderTrip() : renderExpenses();
-    body += '<div class="foot"><span>' + esc(refreshedText()) + (LIVE ? ' · Pull down to refresh' : '') + '</span>' +
-      '<span><a href="' + DOC_URL + '" target="_blank" rel="noopener">Itinerary doc</a> · <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Expense sheet</a></span></div>';
+    body += '<div class="foot"><span>' + esc(refreshedText()) + (LIVE ? ' · Pull down to refresh' : '') + '</span></div>';
     view.innerHTML = body;
   }
   function fromHash() {
@@ -1234,6 +1281,7 @@ function startApp(DATA) {
     if (s) { state.settle = s.getAttribute('data-settle'); store(SK + 'settle', state.settle); render(); return; }
     var sb = e.target.closest('[data-shares]');
     if (sb) { state.shares = sb.getAttribute('data-shares'); store(SK + 'shares', state.shares); render(); return; }
+    if (e.target.closest('[data-tx-all]')) { state.txAll = !state.txAll; render(); return; }
     var cb = e.target.closest('[data-cur]');
     if (cb) { state.cur = cb.getAttribute('data-cur'); store(SK + 'cur', state.cur); render(); return; }
   });
