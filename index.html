@@ -999,12 +999,32 @@ function startApp(DATA) {
     }).join('') + '</div><p class="hint">' + esc(offsetText()) + '</p></section>';
 
     var hotelDates = T.hotels.map(function (x) { return days.filter(function (d) { return d.label === x.date; })[0]; });
+    // Check-in and check-out times come from the plan: the "Check-in to hotel" rows (same order as the hotels)
+    // and the first row mentioning check-out before the next hotel. No time in the doc: just the date.
+    var ins = [], outs = [];
+    days.forEach(function (d, di) { d.items.forEach(function (it) {
+      if (/^check-in to hotel/i.test(it.name || '')) ins.push({ di: di, time: it.time });
+      else if (/check[\s-]?out/i.test(it.name || '')) outs.push({ di: di, time: it.time });
+    }); });
+    function dayText(d) { return d ? d.weekday.slice(0, 3) + ' ' + d.label : ''; }
     h += '<section class="section"><h3>Hotels</h3><div class="list">' + T.hotels.map(function (x, k) {
       var start = hotelDates[k] ? hotelDates[k].date : null;
       var end = hotelDates[k + 1] ? hotelDates[k + 1].date : days[days.length - 1].date;
       var n = start ? nights(start, end) : null;
+      var ci = ins[k] || null, sdi = ci ? ci.di : days.indexOf(hotelDates[k]);
+      var edi = hotelDates[k + 1] ? days.indexOf(hotelDates[k + 1]) : days.length - 1;
+      var co = outs.filter(function (o) { return o.di > sdi && o.di <= edi; })[0] || null;
+      var outDay = co ? days[co.di] : days[edi];
+      // the hotel's own times win when the doc gives them ("Check-in: 3pm", "Check-out time: 11am")
+      var inT = ci && ci.time, outT = co && co.time, notes = [];
+      x.notes.forEach(function (t) {
+        var m = /^check[\s-]?(in|out)(?:\s+time)?\s*:\s*(.+)$/i.exec(String(t).trim());
+        if (m && m[1].toLowerCase() === 'in') inT = m[2]; else if (m) outT = m[2]; else notes.push(t);
+      });
       return '<div class="li"><span class="t">' + esc(x.name) + '</span><span class="r">' + (n ? n + (n === 1 ? ' night' : ' nights') : '') + '</span>' +
-        '<span class="s">Check in ' + esc(x.weekday + ' ' + x.date) + (x.notes.length ? ' · ' + esc(x.notes.join(' · ')) : '') + '</span></div>';
+        '<span class="s">Check in ' + esc(x.weekday + ' ' + x.date) + (inT ? ' · ' + esc(inT) : '') + '<br>' +
+        'Check out ' + esc(dayText(outDay)) + (outT ? ' · ' + esc(outT) : '') + '</span>' +
+        (notes.length ? '<span class="s" style="color:var(--ink-3)">' + esc(notes.join(' · ')) + '</span>' : '') + '</div>';
     }).join('') + '</div></section>';
 
     if (T.car) {
