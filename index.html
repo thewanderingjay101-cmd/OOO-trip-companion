@@ -1147,6 +1147,24 @@ function startApp(DATA) {
       return '<div class="cat"><span>' + esc(c.name) + '</span><span class="cv">' + m(c.total) + ' · ' + Math.round(c.share) + '%</span><span class="cb"><i style="width:' + (c.total / maxC * 100).toFixed(1) + '%"></i></span></div>';
     }).join('') : '<p class="hint">Nothing logged yet.</p>') + '</div></section>';
 
+    // Transactions: newest first, 5 rows, then "Show all"
+    var tx = E.recent || [];
+    if (tx.length) {
+      var shown = state.txAll ? tx : tx.slice(0, 5);
+      var fmtIn = function (v, c) {
+        var dd = 2; try { dd = new Intl.NumberFormat('en', { style: 'currency', currency: c }).resolvedOptions().maximumFractionDigits; } catch (e) {}
+        return v.toLocaleString('en-SG', { minimumFractionDigits: dd, maximumFractionDigits: dd });
+      };
+      h += '<section class="section"><h3>Transactions</h3><div class="list">' + shown.map(function (x) {
+        var c = String(x.currency || base).toUpperCase(), same = c === cur;
+        var amt = same ? fmtIn(x.amount, c) : m(x.sgd || (c === base ? x.amount : 0));
+        var sub = [String(x.date || '').replace(/\s\d{4}$/, ''), x.category, x.paid_by ? 'paid by ' + x.paid_by : ''].filter(Boolean).join(' · ');
+        if (!same && c !== base && x.amount) sub += ' · ' + fmtIn(x.amount, c) + ' ' + c;
+        return '<div class="li"><span class="t">' + esc(x.desc) + '</span><span class="r">' + amt + '</span><span class="s">' + esc(sub) + '</span></div>';
+      }).join('') + '</div>' +
+        (tx.length > 5 ? '<button type="button" class="btn" data-tx-all style="justify-content:center">' + (state.txAll ? 'Show less' : 'Show more') + '</button>' : '') + '</section>';
+    }
+
     return h;
   }
 
@@ -1225,8 +1243,7 @@ function startApp(DATA) {
     renderDays();
     if (state.tab === 'inbox') { view.innerHTML = renderInbox(); var ta = document.getElementById('ibx-text'); if (ta) ta.value = state.draft || ''; return; }
     var body = state.tab === 'plan' ? renderPlan() : state.tab === 'trip' ? renderTrip() : renderExpenses();
-    body += '<div class="foot"><span>' + esc(refreshedText()) + (LIVE ? ' · Pull down to refresh' : '') + '</span>' +
-      '<span><a href="' + DOC_URL + '" target="_blank" rel="noopener">Itinerary doc</a> · <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Expense sheet</a></span></div>';
+    body += '<div class="foot"><span>' + esc(refreshedText()) + (LIVE ? ' · Pull down to refresh' : '') + '</span></div>';
     view.innerHTML = body;
   }
   function fromHash() {
@@ -1264,6 +1281,7 @@ function startApp(DATA) {
     if (s) { state.settle = s.getAttribute('data-settle'); store(SK + 'settle', state.settle); render(); return; }
     var sb = e.target.closest('[data-shares]');
     if (sb) { state.shares = sb.getAttribute('data-shares'); store(SK + 'shares', state.shares); render(); return; }
+    if (e.target.closest('[data-tx-all]')) { state.txAll = !state.txAll; render(); return; }
     var cb = e.target.closest('[data-cur]');
     if (cb) { state.cur = cb.getAttribute('data-cur'); store(SK + 'cur', state.cur); render(); return; }
   });
