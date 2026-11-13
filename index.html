@@ -231,7 +231,6 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .todo-item ul li.tb { color: var(--persimmon); font-weight: 600; }
 
 /* trip overview */
-.ov-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; line-height: 1.25; text-wrap: balance; }
 .ov-intro { margin: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink-2); }
 .ov-intro p { margin: 0; }
 .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -248,8 +247,6 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .hs-head p { margin: 2px 0 0; font-size: 13px; color: var(--ink-3); }
 .who-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .who-row .meta { font-weight: 600; }
-.doclinks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.doclinks .btn { justify-content: center; }
 .leg { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
 .leg:first-child { border-top: 0; padding-top: 2px; }
 .leg .lh { display: flex; align-items: center; gap: 8px; font-weight: 600; flex-wrap: wrap; overflow-wrap: anywhere; }
@@ -283,10 +280,20 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .bal .bv { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .bal .bv.pos { color: var(--pos); }
 .bal .bv.neg { color: var(--neg); }
-.bal.sh { padding: 7px 0; }
-.bal.sh .bt::before { display: none; }
-.bal .bf.share { left: 0; background: var(--bar); }
-.bal .bn small, .bal .bv small { display: block; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.bfly { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 4px 0; padding: 6px 0; font-size: 14px; }
+.bfly .bn { grid-column: 1 / -1; font-weight: 600; font-size: 14px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bfly .half { display: flex; align-items: center; gap: 6px; min-width: 0; height: 22px; }
+.bfly .half.paid { flex-direction: row-reverse; border-right: 1px solid var(--line); }
+.bfly .bf { height: 100%; flex: none; display: flex; align-items: center; }
+.bfly .half.paid .bf { background: var(--bar); border-radius: 5px 0 0 5px; justify-content: flex-start; }
+.bfly .half.share .bf { background: var(--accent); border-radius: 0 5px 5px 0; justify-content: flex-end; }
+.bfly .v { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+.bfly .bf.in .v { padding: 0 7px; }
+.bfly .half.paid .bf.in .v { color: var(--ink); }
+.bfly .half.share .bf.in .v { color: var(--on-accent); }
+.bfly.hd { padding: 0 0 4px; }
+.bfly.hd .half { height: auto; font-size: 12px; font-weight: 600; color: var(--ink-3); padding: 0 6px; }
+.bfly.hd .half.paid { flex-direction: row; justify-content: flex-end; }
 .cat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 6px 0; font-size: 14px; }
 .cat .cb { grid-column: 1 / -1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
 .cat .cb i { display: block; height: 100%; background: var(--bar); border-radius: 4px; }
@@ -955,8 +962,6 @@ function startApp(DATA) {
     var n = first && last ? nights(first.date, last.date) : 0;
     var who = ((DATA.expenses && DATA.expenses.by_person) || []).map(function (p) { return p.name; }).filter(Boolean);
     h += '<section class="section"><h3>Overview</h3>';
-    if (P.title) h += '<div class="ov-title">' + esc(P.title) + '</div>';
-    if (first && last) h += '<p class="hint" style="margin:0">' + esc(rangeText(first.date, last.date)) + (META.place ? ' · ' + esc(META.place) : '') + '</p>';
     if ((P.intro || []).length) h += '<div class="ov-intro">' + P.intro.map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') + '</div>';
     h += '<div class="stats">' +
       '<div class="stat"><b>' + days.length + '</b><span>' + (days.length === 1 ? 'day' : 'days') + '</span><span>' + n + (n === 1 ? ' night' : ' nights') + '</span></div>' +
@@ -964,10 +969,7 @@ function startApp(DATA) {
       '<div class="stat"><b>' + (who.length || '–') + '</b><span>travellers</span></div>' +
       '</div>';
     if (who.length) h += '<div class="who-row">' + who.map(function (w) { return '<span class="meta">' + esc(w) + '</span>'; }).join('') + '</div>';
-    h += '<div class="doclinks">' +
-      '<a class="btn primary" href="' + DOC_URL + '" target="_blank" rel="noopener">' + icon('cal', 16) + 'Itinerary doc</a>' +
-      '<a class="btn primary" href="' + SHEET_URL + '" target="_blank" rel="noopener">' + icon('ticket', 16) + 'Expense sheet</a>' +
-      '</div></section>';
+    h += '</section>';
     return h;
   }
   function renderTrip() {
@@ -1002,15 +1004,40 @@ function startApp(DATA) {
     }).join('') + '</div></section>';
 
     if (T.car) {
-      var cars = (T.car.notes || []).concat(T.car.lines || []).join(' ').match(/(\d+)\s+cars?\b/i);
-      h += '<section class="section"><h3>Car rental</h3>' + (cars ? '<p class="hint">' + esc(cars[1]) + (+cars[1] === 1 ? ' rental car' : ' rental cars') + ' for the trip</p>' : '') + '<div class="list">' +
-        '<div class="li"><span class="t">Pick up</span><span class="r">' + esc(T.car.weekday + ' ' + T.car.date) + '</span><span class="s">' + esc(T.car.lines.join(' · ')) + '</span></div>' +
-        (T.car['return'] ? '<div class="li"><span class="t">Return</span><span class="r">' + esc(T.car['return']) + '</span></div>' : '') +
-        '</div><details class="more"><summary>Pickup notes</summary><ul class="notes">' + T.car.notes.reduce(function (a, n) {
-          var last = a[a.length - 1];
-          if (last !== undefined && /:$/.test(last.trim()) && !/:$/.test(n.trim())) a[a.length - 1] = last.trim() + ' ' + n; else a.push(n);
-          return a;
-        }, []).map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></details></section>';
+      // Sort the doc's car lines: cars and insurance go on top, the pick-up time beside the date,
+      // the pick-up location under it, everything else into Notes. Works on any trip's wording.
+      // "20 Nov 08:00" -> "Fri 20 Nov · 08:00", like the pick-up line
+      var retText = function (r) {
+        var m = /^(.*?)\s+(\d{1,2}:\d{2}.*)$/.exec(String(r)), lbl = m ? m[1] : String(r);
+        var d = days.filter(function (x) { return x.label === lbl; })[0];
+        return (d ? d.weekday.slice(0, 3) + ' ' : '') + lbl + (m ? ' · ' + m[2] : '');
+      };
+      var C = T.car, models = [], company = '', insurance = '', ptime = '', ploc = '', rest = [];
+      (C.lines || []).forEach(function (l) {
+        var t = String(l).trim(), m;
+        if (!t) return;
+        if ((m = /^pick[\s-]?up\s+time\s*:\s*(.+)$/i.exec(t)) && !ptime) ptime = m[1];
+        else if ((m = /^(?:pick[\s-]?up\s+)?location\s*:\s*(.+)$/i.exec(t)) && !ploc) ploc = m[1];
+        else if (/insurance/i.test(t) && !insurance) insurance = t;
+        else if ((m = /^([^:]+?)\s*[-–—]\s*((?:[$¥€£]|[A-Z]{3}\s?|S\$)\s?[\d,.]+.*)$/.exec(t))) models.push({ name: m[1], price: m[2] });
+        else if (/(car\s+rental|rent[\s-]?a[\s-]?car|car\s+hire|rentals?)$/i.test(t) && !/[:\-–]/.test(t) && !company) company = t;
+        else rest.push(t);
+      });
+      if (!insurance) (C.notes || []).some(function (n) { if (/insurance/i.test(n)) { insurance = String(n).trim(); return true; } return false; });
+      var nm = (C.notes || []).concat(C.lines || []).join(' ').match(/(\d+)\s+cars?\b/i);
+      var nCars = models.length || (nm ? +nm[1] : 0);
+      var notes = rest.concat(C.notes || []).reduce(function (a, n) {
+        var last = a[a.length - 1];
+        if (last !== undefined && /:$/.test(last.trim()) && !/:$/.test(n.trim())) a[a.length - 1] = last.trim() + ' ' + n; else a.push(n);
+        return a;
+      }, []);
+      h += '<section class="section"><h3>Car rental</h3><div class="list">' +
+        (nCars || models.length || company ? '<div class="li"><span class="t">' + (nCars ? nCars + (nCars === 1 ? ' car' : ' cars') : 'Car') + '</span><span class="r">' + esc(company) + '</span>' +
+          (models.length ? '<span class="s">' + models.map(function (x) { return esc(x.name) + ' <span style="color:var(--ink-3)">' + esc(x.price) + '</span>'; }).join(' · ') + '</span>' : '') + '</div>' : '') +
+        (insurance ? '<div class="li"><span class="t">Insurance</span><span class="s">' + esc(insurance) + '</span></div>' : '') +
+        '<div class="li"><span class="t">Pick up</span><span class="r">' + esc(C.weekday + ' ' + C.date) + (ptime || C.time ? ' · ' + esc(ptime || C.time) : '') + '</span>' + (ploc ? '<span class="s">' + esc(ploc) + '</span>' : '') + '</div>' +
+        (C['return'] ? '<div class="li"><span class="t">Return</span><span class="r">' + esc(retText(C['return'])) + '</span></div>' : '') +
+        '</div>' + (notes.length ? '<details class="more"><summary>Notes</summary><ul class="notes">' + notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></details>' : '') + '</section>';
     }
 
     var B = DATA.boot;
@@ -1023,9 +1050,8 @@ function startApp(DATA) {
         '<p class="hint"><a href="' + esc(B.url + '?add=1' + ksq) + '" target="_top">Open another trip with its PIN</a></p>' +
         '</section>';
       if (B.launcher) {
-        h += '<section class="section"><div class="hs-head">' + APP_ICON + '<div><h3>Add OOO to your Home Screen</h3><p>Open your trips from an app icon, no PIN needed.</p></div></div>' +
-          '<ol class="steps"><li><span>Unlock every trip you want first, using <b>Open another trip with its PIN</b> above. One icon opens them all.</span></li>' +
-          '<li><span>Tap <b>Set up the icon</b> below' + (B.pages ? '' : ' (it opens in Safari)') + '.</span></li>' +
+        h += '<section class="section"><div class="hs-head">' + APP_ICON + '<div><h3>Add OOO to your Home Screen</h3><p>Open your trips from an app icon. Enter your PIN once.</p></div></div>' +
+          '<ol class="steps"><li><span>Tap <b>Set up the icon</b> below' + (B.pages ? '' : ' (it opens in Safari)') + '.</span></li>' +
           '<li><span>' + HS_HOW + '</span></li></ol>' +
           '<a class="btn primary" href="' + esc(B.launcher + '?setup=1' + ksq) + '"' + (B.pages ? '' : ' target="_blank" rel="noopener"') + ' style="justify-content:center">Set up the icon</a></section>';
       }
@@ -1072,13 +1098,18 @@ function startApp(DATA) {
     // Balances: each group's or person's share of the costs (bar), and what they paid
     var sh = state.shares === 'people' ? E.by_person : E.by_group;
     sh = (sh || []).filter(function (p) { return p.paid || p.owed; });
-    var maxO = sh.reduce(function (a, p) { return Math.max(a, p.owed); }, 0) || 1;
-    var sumO = sh.reduce(function (a, p) { return a + p.owed; }, 0) || 1;
+    // left half: what they paid; right half: their share. Both on one scale so they compare.
+    // The amount sits inside its bar when the bar is wide enough, else just past its end.
+    var maxV = sh.reduce(function (a, p) { return Math.max(a, p.paid, p.owed); }, 0) || 1;
+    function half(v, cls) {
+      var w = v / maxV * 100, lab = v > 0.005 ? '<span class="v">' + m(v) + '</span>' : '';
+      return '<span class="half ' + cls + '"><span class="bf' + (w >= 58 ? ' in' : '') + '" style="width:' + w.toFixed(1) + '%">' + (w >= 58 ? lab : '') + '</span>' + (w >= 58 ? '' : lab) + '</span>';
+    }
     h += '<section class="section"><h3>Balances</h3>' +
       '<div class="seg" role="group" aria-label="Shares by"><button type="button" data-shares="groups" aria-pressed="' + (state.shares !== 'people') + '">By group</button><button type="button" data-shares="people" aria-pressed="' + (state.shares === 'people') + '">By person</button></div>' +
-      '<p class="hint">Each ' + (state.shares === 'people' ? 'person' : 'group') + '\'s share of the costs, and what they paid.</p><div>' + (sh.length ? sh.map(function (p) {
-        return '<div class="bal sh"><span class="bn">' + esc(p.name) + '<small>paid ' + m(p.paid) + '</small></span><span class="bt"><span class="bf share" style="width:' + (p.owed / maxO * 100).toFixed(1) + '%"></span></span><span class="bv">' + m(p.owed) + '<small>' + Math.round(p.owed / sumO * 100) + '%</small></span></div>';
-      }).join('') : '<p class="hint">Nothing logged yet.</p>') + '</div></section>';
+      (sh.length ? '<div><div class="bfly hd"><span class="half paid">Paid</span><span class="half share">Share</span></div>' + sh.map(function (p) {
+        return '<div class="bfly"><span class="bn">' + esc(p.name) + '</span>' + half(p.paid, 'paid') + half(p.owed, 'share') + '</div>';
+      }).join('') + '</div>' : '<p class="hint">Nothing logged yet.</p>') + '</section>';
 
     var cats = E.by_category.filter(function (c) { return c.total > 0; }).sort(function (a, b) { return b.total - a.total; });
     var maxC = cats.reduce(function (a, c) { return Math.max(a, c.total); }, 0) || 1;
