@@ -94,6 +94,7 @@ button { font: inherit; color: inherit; }
 .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
 .top h1 { margin: 0; font-family: var(--font-display); font-size: 22px; line-height: 1.2; font-weight: 700; text-wrap: balance; }
 .top .sub { font-size: 13px; color: var(--ink-3); }
+.top .sub:empty { display: none; }
 .days {
   display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
   padding-block: 10px 2px; scroll-snap-type: x proximity;
@@ -237,6 +238,14 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .stat { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 0; min-width: 0; }
 .stat b { font-family: var(--font-display); font-size: 20px; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .stat span { font-size: 12px; color: var(--ink-3); font-weight: 500; }
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: st; display: flex; flex-direction: column; gap: 10px; }
+.steps li { counter-increment: st; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; color: var(--ink-2); }
+.steps li::before { content: counter(st); width: 26px; height: 26px; border-radius: 13px; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+.steps li b { color: var(--ink); }
+.steps .ic { display: inline-block; vertical-align: -3px; color: var(--accent); }
+.hs-head { display: flex; align-items: center; gap: 12px; }
+.hs-head svg { flex: none; width: 44px; height: 44px; border-radius: 10px; }
+.hs-head p { margin: 2px 0 0; font-size: 13px; color: var(--ink-3); }
 .who-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .who-row .meta { font-weight: 600; }
 .doclinks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -278,6 +287,14 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .cat .cb { grid-column: 1 / -1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
 .cat .cb i { display: block; height: 100%; background: var(--bar); border-radius: 4px; }
 .cat .cv { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.curbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.curbar .hint { margin: 0; font-size: 13px; color: var(--ink-3); }
+.shr { display: grid; grid-template-columns: minmax(0, 1fr) 84px 84px; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; align-items: baseline; }
+.shr.hd { border-top: 0; padding: 0 0 2px; font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.shr span:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.shr.g { font-weight: 700; }
+.shr.m { border-top: 0; padding-top: 0; color: var(--ink-2); }
+.shr.m span:first-child { padding-left: 14px; }
 .foot { font-size: 12px; color: var(--ink-3); text-align: center; padding: 8px 0 0; display: flex; flex-direction: column; gap: 4px; }
 
 /* tab bar */
@@ -425,7 +442,8 @@ function startApp(DATA) {
     if (x[1] !== y[1]) return x[2] + ' ' + M[x[1] - 1] + ' – ' + y[2] + ' ' + M[y[1] - 1] + ' ' + y[0];
     return x[2] + '–' + y[2] + ' ' + M[y[1] - 1] + ' ' + y[0];
   }
-  if (days.length) document.getElementById('eyebrow').textContent = META.name + ' · ' + rangeText(days[0].date, days[days.length - 1].date);
+  function tripTitle() { return META.name + (days.length ? ' · ' + rangeText(days[0].date, days[days.length - 1].date) : ''); }
+  document.getElementById('sub').textContent = '';
   var view = document.getElementById('view');
   var state = { tab: 'plan', day: null, settle: 'groups', inbox: null, draft: '', me: null, sending: false, inboxMsg: '', replyTo: 0 };
 
@@ -907,6 +925,8 @@ function startApp(DATA) {
   }
 
   /* ---------- trip ---------- */
+  var APP_ICON = window.__oooLogo || '';
+  var HS_HOW = window.__oooHsHow || '';
   function offsetText() {
     try {
       var d = new Date(days.length ? days[0].date + 'T12:00:00Z' : Date.now());
@@ -936,22 +956,20 @@ function startApp(DATA) {
     var first = days[0], last = days[days.length - 1];
     var n = first && last ? nights(first.date, last.date) : 0;
     var who = ((DATA.expenses && DATA.expenses.by_person) || []).map(function (p) { return p.name; }).filter(Boolean);
-    var cars = T.car ? (T.car.notes || []).concat(T.car.lines || []).join(' ').match(/(\d+)\s+cars?\b/i) : null;
     h += '<section class="section"><h3>Overview</h3>';
     if (P.title) h += '<div class="ov-title">' + esc(P.title) + '</div>';
     if (first && last) h += '<p class="hint" style="margin:0">' + esc(rangeText(first.date, last.date)) + (META.place ? ' · ' + esc(META.place) : '') + '</p>';
     if ((P.intro || []).length) h += '<div class="ov-intro">' + P.intro.map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') + '</div>';
     h += '<div class="stats">' +
-      '<div class="stat"><b>' + days.length + '</b><span>days · ' + n + ' nights</span></div>' +
+      '<div class="stat"><b>' + days.length + '</b><span>' + (days.length === 1 ? 'day' : 'days') + '</span><span>' + n + (n === 1 ? ' night' : ' nights') + '</span></div>' +
       '<div class="stat"><b>' + T.hotels.length + '</b><span>' + (T.hotels.length === 1 ? 'hotel' : 'hotels') + '</span></div>' +
       '<div class="stat"><b>' + (who.length || '–') + '</b><span>travellers</span></div>' +
       '</div>';
     if (who.length) h += '<div class="who-row">' + who.map(function (w) { return '<span class="meta">' + esc(w) + '</span>'; }).join('') + '</div>';
-    if (cars) h += '<p class="hint" style="margin:0">' + esc(cars[1]) + ' rental cars for the trip.</p>';
     h += '<div class="doclinks">' +
       '<a class="btn primary" href="' + DOC_URL + '" target="_blank" rel="noopener">' + icon('cal', 16) + 'Itinerary doc</a>' +
       '<a class="btn primary" href="' + SHEET_URL + '" target="_blank" rel="noopener">' + icon('ticket', 16) + 'Expense sheet</a>' +
-      '</div><p class="hint" style="margin:0">The full documents in Google Drive. This app reads them live.</p></section>';
+      '</div></section>';
     return h;
   }
   function renderTrip() {
@@ -986,7 +1004,8 @@ function startApp(DATA) {
     }).join('') + '</div></section>';
 
     if (T.car) {
-      h += '<section class="section"><h3>Car rental</h3><div class="list">' +
+      var cars = (T.car.notes || []).concat(T.car.lines || []).join(' ').match(/(\d+)\s+cars?\b/i);
+      h += '<section class="section"><h3>Car rental</h3>' + (cars ? '<p class="hint">' + esc(cars[1]) + (+cars[1] === 1 ? ' rental car' : ' rental cars') + ' for the trip</p>' : '') + '<div class="list">' +
         '<div class="li"><span class="t">Pick up</span><span class="r">' + esc(T.car.weekday + ' ' + T.car.date) + '</span><span class="s">' + esc(T.car.lines.join(' · ')) + '</span></div>' +
         (T.car['return'] ? '<div class="li"><span class="t">Return</span><span class="r">' + esc(T.car['return']) + '</span></div>' : '') +
         '</div><details class="more"><summary>Pickup notes</summary><ul class="notes">' + T.car.notes.reduce(function (a, n) {
@@ -1004,35 +1023,75 @@ function startApp(DATA) {
         return '<div class="li"><a class="t" href="' + esc(B.url + '?trip=' + encodeURIComponent(t.key) + ksq) + '" target="_top">' + esc(t.name) + '</a><span class="r">' + esc(rangeText(t.start, t.end)) + '</span></div>';
       }).join('') + '</div>' : '') +
         '<p class="hint"><a href="' + esc(B.url + '?add=1' + ksq) + '" target="_top">Open another trip with its PIN</a></p>' +
-        (B.launcher ? '<p class="hint"><a href="' + esc(B.launcher + '?setup=1' + ksq) + '"' + (B.pages ? '' : ' target="_blank" rel="noopener"') + '>Add OOO to Home Screen</a> (' + (B.pages ? 'after unlocking all your trips' : 'open in Safari, after unlocking all your trips') + ')</p>' : '') +
         '</section>';
+      if (B.launcher) {
+        h += '<section class="section"><div class="hs-head">' + APP_ICON + '<div><h3>Add OOO to your Home Screen</h3><p>Open your trips from an app icon, no PIN needed.</p></div></div>' +
+          '<ol class="steps"><li><span>Unlock every trip you want first, using <b>Open another trip with its PIN</b> above. One icon opens them all.</span></li>' +
+          '<li><span>Tap <b>Set up the icon</b> below' + (B.pages ? '' : ' (it opens in Safari)') + '.</span></li>' +
+          '<li><span>' + HS_HOW + '</span></li></ol>' +
+          '<a class="btn primary" href="' + esc(B.launcher + '?setup=1' + ksq) + '"' + (B.pages ? '' : ' target="_blank" rel="noopener"') + ' style="justify-content:center">Set up the icon</a></section>';
+      }
     }
     return h;
   }
 
   /* ---------- expenses ---------- */
   function renderExpenses() {
-    var E = DATA.expenses, cur = E.currency || 'SGD', h = '';
-    var list = state.settle === 'groups' ? E.settle_groups : E.settle_people;
-    h += '<section class="section"><h3>Settle up</h3>' +
-      '<div class="seg" role="group" aria-label="Settle by"><button type="button" id="seg-groups" data-settle="groups" aria-pressed="' + (state.settle === 'groups') + '">By group</button><button type="button" id="seg-people" data-settle="people" aria-pressed="' + (state.settle === 'people') + '">By person</button></div>' +
-      '<div class="list">' + (list.length ? list.map(function (p) {
-        return '<div class="pay"><span class="who">' + esc(p.from) + '<span class="arrow">' + icon('arrow', 14) + '</span>' + esc(p.to) + '</span><span class="amt">' + money(p.amount) + '</span></div>';
-      }).join('') : '<div class="pay"><span class="who">Everyone is square.</span></div>') + '</div><p class="hint">Amounts in ' + esc(cur) + '. Payments logged as Settlement payment are already counted.</p></section>';
+    var E = DATA.expenses, base = E.currency || 'SGD', h = '';
+    // Show amounts in the trip's base currency or the local one. The local rate is the average of the
+    // sheet's own conversions (amount / base amount on the foreign-currency rows), so it matches the sheet.
+    var fx = {};
+    (E.recent || []).forEach(function (x) {
+      var c = String(x.currency || '').toUpperCase();
+      if (!/^[A-Z]{3}$/.test(c) || c === base || !(x.amount > 0) || !(x.sgd > 0)) return;
+      var f = fx[c] || (fx[c] = { n: 0, a: 0, b: 0 }); f.n++; f.a += x.amount; f.b += x.sgd;
+    });
+    var local = Object.keys(fx).sort(function (a, b) { return fx[b].n - fx[a].n; })[0] || null;
+    var rate = local ? fx[local].a / fx[local].b : 1;
+    var cur = local && state.cur === local ? local : base, k = cur === base ? 1 : rate;
+    var dec = 2; try { dec = new Intl.NumberFormat('en', { style: 'currency', currency: cur }).resolvedOptions().maximumFractionDigits; } catch (e) {}
+    function m(n) { return (n * k).toLocaleString('en-SG', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+    h += '<div class="curbar"><p class="hint">' + (local ? 'Amounts in' : 'Amounts in ' + esc(base)) + '</p>' + (local ?
+      '<div class="seg" role="group" aria-label="Currency"><button type="button" data-cur="' + esc(base) + '" aria-pressed="' + (cur === base) + '">' + esc(base) + '</button><button type="button" data-cur="' + esc(local) + '" aria-pressed="' + (cur === local) + '">' + esc(local) + '</button></div>' : '') + '</div>';
+    if (cur !== base) h += '<p class="hint" style="margin:-8px 0 0;font-size:12px;color:var(--ink-3)">Converted at about ' + rate.toLocaleString('en-SG', { maximumFractionDigits: 2 }) + ' ' + esc(local) + ' per ' + esc(base) + ', the average rate of this trip\'s ' + esc(local) + ' expenses.</p>';
 
+    var list = state.settle === 'groups' ? E.settle_groups : E.settle_people;
     var bal = state.settle === 'groups' ? E.by_group : E.by_person.filter(function (p) { return p.paid || p.owed; });
-    var maxAbs = bal.reduce(function (a, p) { return Math.max(a, Math.abs(p.net)); }, 0) || 1;
-    h += '<section class="section"><h3>Balances</h3><p class="hint">Green is owed money, red owes.</p><div>' + bal.map(function (p) {
-      var w = Math.abs(p.net) / maxAbs * 50, cls = p.net >= 0 ? 'pos' : 'neg';
-      return '<div class="bal"><span class="bn">' + esc(p.name) + '</span><span class="bt"><span class="bf ' + cls + '" style="width:' + w.toFixed(1) + '%"></span></span><span class="bv ' + cls + '">' + (p.net > 0 ? '+' : '') + money(p.net) + '</span></div>';
-    }).join('') + '</div><details class="more"><summary>Paid and owed</summary><div class="list">' + bal.map(function (p) {
-      return '<div class="li"><span class="t">' + esc(p.name) + '</span><span class="r">paid ' + money(p.paid) + ' · share ' + money(p.owed) + '</span></div>';
-    }).join('') + '</div></details></section>';
+    var maxAbs = bal.reduce(function (a, p) { return Math.max(a, Math.abs(p.net)); }, 0);
+    h += '<section class="section"><h3>Settle up</h3>' +
+      '<div class="seg" role="group" aria-label="Settle by"><button type="button" id="seg-groups" data-settle="groups" aria-pressed="' + (state.settle === 'groups') + '">By group</button><button type="button" id="seg-people" data-settle="people" aria-pressed="' + (state.settle === 'people') + '">By person</button></div>';
+    if (maxAbs < 0.005 && !list.length) h += '<p class="hint" style="margin:0">Everyone is square.</p></section>';
+    else {
+      h += '<p class="hint">Green gets money back, red owes.</p><div>' + bal.map(function (p) {
+        var w = Math.abs(p.net) / (maxAbs || 1) * 50, cls = p.net >= 0 ? 'pos' : 'neg';
+        return '<div class="bal"><span class="bn">' + esc(p.name) + '</span><span class="bt"><span class="bf ' + cls + '" style="width:' + w.toFixed(1) + '%"></span></span><span class="bv ' + cls + '">' + (p.net > 0 ? '+' : '') + m(p.net) + '</span></div>';
+      }).join('') + '</div>' +
+        (list.length ? '<details class="more"><summary>Who pays whom</summary><div class="list">' + list.map(function (p) {
+          return '<div class="pay"><span class="who">' + esc(p.from) + '<span class="arrow">' + icon('arrow', 14) + '</span>' + esc(p.to) + '</span><span class="amt">' + m(p.amount) + '</span></div>';
+        }).join('') + '</div></details>' : '') + '</section>';
+    }
+
+    // Balances: what each group and each person paid, and their share of the costs
+    var people = E.by_person.filter(function (p) { return p.paid || p.owed; });
+    var groups = (E.by_group || []).filter(function (g) { return g.paid || g.owed; });
+    var rows = '<div class="shr hd"><span></span><span>Paid</span><span>Share</span></div>';
+    function shr(p, cls) { return '<div class="shr' + cls + '"><span>' + esc(p.name) + '</span><span>' + m(p.paid) + '</span><span>' + m(p.owed) + '</span></div>'; }
+    if (groups.length) {
+      var shown = {};
+      groups.forEach(function (g) {
+        var mem = people.filter(function (p) { return p.group === g.name; });
+        rows += shr(g, ' g');
+        if (!(mem.length === 1 && mem[0].name === g.name)) mem.forEach(function (p) { rows += shr(p, ' m'); });
+        mem.forEach(function (p) { shown[p.name] = 1; });
+      });
+      people.filter(function (p) { return !shown[p.name]; }).forEach(function (p) { rows += shr(p, ' g'); });
+    } else people.forEach(function (p) { rows += shr(p, ''); });
+    h += '<section class="section"><h3>Balances</h3><p class="hint">What each ' + (groups.length ? 'group and person' : 'person') + ' paid, and their share of the costs.</p><div>' + rows + '</div></section>';
 
     var cats = E.by_category.filter(function (c) { return c.total > 0; }).sort(function (a, b) { return b.total - a.total; });
     var maxC = cats.reduce(function (a, c) { return Math.max(a, c.total); }, 0) || 1;
-    h += '<section class="section"><h3>By category</h3><p class="hint">' + money(E.total_spend) + ' ' + esc(cur) + ' spent so far across ' + E.count + ' expense' + (E.count === 1 ? '' : 's') + '. The full log is in the <a href="' + SHEET_URL + '" target="_blank" rel="noopener">expense sheet</a>.</p><div>' + (cats.length ? cats.map(function (c) {
-      return '<div class="cat"><span>' + esc(c.name) + '</span><span class="cv">' + money(c.total) + ' · ' + Math.round(c.share) + '%</span><span class="cb"><i style="width:' + (c.total / maxC * 100).toFixed(1) + '%"></i></span></div>';
+    h += '<section class="section"><h3>By category</h3><p class="hint">' + m(E.total_spend) + ' spent so far across ' + E.count + ' expense' + (E.count === 1 ? '' : 's') + '.</p><div>' + (cats.length ? cats.map(function (c) {
+      return '<div class="cat"><span>' + esc(c.name) + '</span><span class="cv">' + m(c.total) + ' · ' + Math.round(c.share) + '%</span><span class="cb"><i style="width:' + (c.total / maxC * 100).toFixed(1) + '%"></i></span></div>';
     }).join('') : '<p class="hint">Nothing logged yet.</p>') + '</div></section>';
 
     return h;
@@ -1104,8 +1163,8 @@ function startApp(DATA) {
   }
   function render() {
     var titles = { plan: 'Plan', trip: 'Trip', expenses: 'Expenses', inbox: 'Inbox' };
-    document.getElementById('title').textContent = titles[state.tab];
-    document.getElementById('sub').textContent = refreshedText();
+    document.getElementById('eyebrow').textContent = titles[state.tab];
+    document.getElementById('title').textContent = tripTitle();
     ['plan', 'trip', 'expenses', 'inbox'].forEach(function (t) {
       var a = document.getElementById('tab-' + t);
       if (t === state.tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
@@ -1113,7 +1172,7 @@ function startApp(DATA) {
     renderDays();
     if (state.tab === 'inbox') { view.innerHTML = renderInbox(); var ta = document.getElementById('ibx-text'); if (ta) ta.value = state.draft || ''; return; }
     var body = state.tab === 'plan' ? renderPlan() : state.tab === 'trip' ? renderTrip() : renderExpenses();
-    body += '<div class="foot"><span>' + esc(refreshedText()) + (LIVE ? '. Read live from the itinerary doc and expense sheet; pull down to refresh.' : ' from the itinerary doc and expense sheet. Refreshes each morning and evening.') + '</span>' +
+    body += '<div class="foot"><span>' + esc(refreshedText()) + (LIVE ? ' · Pull down to refresh' : '') + '</span>' +
       '<span><a href="' + DOC_URL + '" target="_blank" rel="noopener">Itinerary doc</a> · <a href="' + SHEET_URL + '" target="_blank" rel="noopener">Expense sheet</a></span></div>';
     view.innerHTML = body;
   }
@@ -1150,11 +1209,14 @@ function startApp(DATA) {
     if (e.target.closest('[data-ibx-cancel]')) { state.replyTo = 0; render(); return; }
     var s = e.target.closest('[data-settle]');
     if (s) { state.settle = s.getAttribute('data-settle'); store(SK + 'settle', state.settle); render(); return; }
+    var cb = e.target.closest('[data-cur]');
+    if (cb) { state.cur = cb.getAttribute('data-cur'); store(SK + 'cur', state.cur); render(); return; }
   });
   window.addEventListener('hashchange', function () { fromHash(); render(); window.scrollTo(0, 0); });
 
   state.day = pickDay();
   state.settle = store(SK + 'settle') === 'people' ? 'people' : 'groups';
+  state.cur = store(SK + 'cur');
   state.me = store(SK + 'me');
   fromHash();
   render();
@@ -1165,6 +1227,7 @@ function startApp(DATA) {
       nd.boot = nd.boot || DATA.boot;
       markFerries(nd.plan && nd.plan.days);
       DATA = nd; days = DATA.plan.days; LIVE = DATA.mode === 'live';
+      document.getElementById('sub').textContent = '';
       if (!days.some(function (d) { return d.date === state.day; })) state.day = pickDay();
       if (state.tab === 'inbox') { state.inboxMsg = ''; loadInbox(); }
       var y = window.scrollY; render(); window.scrollTo(0, y);
@@ -1254,10 +1317,16 @@ function startApp(DATA) {
     return out;
   }
   var want = boot.trip || '';
+  // Add to Home Screen steps (Trip tab and the ?setup=1 screen)
+  var SHARE_IC = '<svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Share"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
+  var HS_IPHONE = '<b>iPhone:</b> in Safari, tap Share ' + SHARE_IC + ', then <b>Add to Home Screen</b> and <b>Add</b>.';
+  var HS_ANDROID = '<b>Android:</b> in Chrome, tap the menu <b>⋮</b>, then <b>Add to Home screen</b>.';
+  window.__oooHsHow = HS_IPHONE + '<br>' + HS_ANDROID;
   // App icon drawn inline (no image request, so it can't show as a broken image)
   var LOGO = '<svg viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B5BC4"/><stop offset="1" stop-color="#1B2C66"/></linearGradient></defs>' +
     '<rect width="512" height="512" fill="url(#lg)"/><g fill="none" stroke="#fff" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"><path d="M206 168v-26a20 20 0 0 1 20-20h60a20 20 0 0 1 20 20v26"/><rect x="126" y="168" width="260" height="200" rx="34"/><path d="M196 168v200M316 168v200"/></g>' +
     '<circle cx="176" cy="396" r="14" fill="#fff"/><circle cx="336" cy="396" r="14" fill="#fff"/><path transform="translate(330 96) rotate(35)" d="M0 -44 L10 -10 L46 8 L46 20 L10 10 L6 34 L18 44 L18 52 L0 46 L-18 52 L-18 44 L-6 34 L-10 10 L-46 20 L-46 8 L-10 -10 Z" fill="#FFD27A"/></svg>';
+  window.__oooLogo = LOGO.replace(/id="lg"/, 'id="lg2"').replace('url(#lg)', 'url(#lg2)');
   view.innerHTML = '<div class="splash" id="splash" hidden>' + LOGO + '<h3>OOO</h3><p>Opening your trip…</p></div>' +
     '<form class="section gate" id="gate" autocomplete="off">' +
     '<h3>Open your trip</h3><p class="hint">Enter the PIN JY shared with you. This device remembers it after the first time.</p>' +
@@ -1270,9 +1339,9 @@ function startApp(DATA) {
   if (boot.setup) {
     var keepQ = new URLSearchParams(location.search); keepQ.delete('setup');
     try { history.replaceState(null, '', location.pathname + (keepQ.toString() ? '?' + keepQ.toString() : '')); } catch (e) {}
-    view.insertAdjacentHTML('afterbegin', '<div class="section gate" id="hs-steps"><h3>Add OOO to your Home Screen</h3>' +
-      '<p class="hint">iPhone: tap the Share button in Safari, choose <b>Add to Home Screen</b>, then <b>Add</b>. Android: open the Chrome menu, then <b>Add to Home screen</b>.</p>' +
-      '<p class="hint">The icon opens every trip you have unlocked. Keep it to yourself: the link works like your PINs.</p>' +
+    view.insertAdjacentHTML('afterbegin', '<div class="section gate" id="hs-steps"><div class="hs-head">' + window.__oooLogo + '<div><h3>Add OOO to your Home Screen</h3></div></div>' +
+      '<ol class="steps"><li><span>' + HS_IPHONE + '</span></li><li><span>' + HS_ANDROID + '</span></li></ol>' +
+      '<p class="hint">The icon opens every trip you have unlocked. Keep it to yourself: it works like your PINs.</p>' +
       '<p class="hint"><a href="' + esc(location.pathname + (keepQ.toString() ? '?' + keepQ.toString() : '')) + '">Done, open OOO</a></p></div>');
     document.getElementById('days').hidden = true;
     document.getElementById('gate').hidden = true;

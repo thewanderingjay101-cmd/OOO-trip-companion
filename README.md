@@ -9,3 +9,5 @@ The OOO trip companion app: https://thewanderingjay101-cmd.github.io/OOO-trip-co
 - `apple-touch-icon.png` and `icon-512.png` are the Home Screen and browser icons.
 
 `index.html` is generated from the app's template (`build_appscript.py` writes `pages/index.html`); edit the template and rebuild rather than editing this file by hand.
+
+The interface is written for travellers: no mention of Google Drive, sheets or how data is read. What each screen shows (header, Home Screen steps, currency toggle, Settle up and Balances) is described in the project's `kansai-mobile/README.md`, under "What the screens show".
