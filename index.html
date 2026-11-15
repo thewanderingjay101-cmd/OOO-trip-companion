@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="OOO">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#FCFAF6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#283154" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#3A4470" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-512.png">
@@ -57,24 +57,24 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #283154; --surface: #333D63; --surface-2: #3E4972; --line: #4C5784;
-    --ink: #F3ECE2; --ink-2: #D3C6B6; --ink-3: #BDB2A4;
-    --accent: #F6B92B; --accent-soft: #4E4A3C; --on-accent: #1B2340;
+    --bg: #3A4470; --surface: #46517F; --surface-2: #525E8E; --line: #5F6B9B;
+    --ink: #F3ECE2; --ink-2: #D3C6B6; --ink-3: #CFC5B8;
+    --accent: #F6B92B; --accent-soft: #625C48; --on-accent: #1B2340;
     --duck: #F6B92B; --on-duck: #1B2340; --trail: #F2643D;
-    --persimmon: #FF9B7D; --persimmon-soft: #4E2418;
-    --good: #6FD0CF; --good-soft: #15403F; --amber: #F2C86B; --amber-soft: #3F3216;
+    --persimmon: #FF9B7D; --persimmon-soft: #6A3424;
+    --good: #6FD0CF; --good-soft: #22575A; --amber: #F2C86B; --amber-soft: #3F3216;
     --neg: #FF9B7D; --pos: #6FD0CF; --bar: #8C7A55; --on-bar: #F3ECE2;
     --shadow: 0 4px 14px rgba(0,0,0,.25);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #283154; --surface: #333D63; --surface-2: #3E4972; --line: #4C5784;
-  --ink: #F3ECE2; --ink-2: #D3C6B6; --ink-3: #BDB2A4;
-  --accent: #F6B92B; --accent-soft: #4E4A3C; --on-accent: #1B2340;
+  --bg: #3A4470; --surface: #46517F; --surface-2: #525E8E; --line: #5F6B9B;
+  --ink: #F3ECE2; --ink-2: #D3C6B6; --ink-3: #CFC5B8;
+  --accent: #F6B92B; --accent-soft: #625C48; --on-accent: #1B2340;
   --duck: #F6B92B; --on-duck: #1B2340; --trail: #F2643D;
-  --persimmon: #FF9B7D; --persimmon-soft: #4E2418;
-  --good: #6FD0CF; --good-soft: #15403F; --amber: #F2C86B; --amber-soft: #3F3216;
+  --persimmon: #FF9B7D; --persimmon-soft: #6A3424;
+  --good: #6FD0CF; --good-soft: #22575A; --amber: #F2C86B; --amber-soft: #3F3216;
   --neg: #FF9B7D; --pos: #6FD0CF; --bar: #8C7A55; --on-bar: #F3ECE2;
   --shadow: 0 4px 14px rgba(0,0,0,.25);
   color-scheme: dark;
@@ -262,8 +262,9 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .hs-head { display: flex; align-items: center; gap: 12px; }
 .hs-head svg { flex: none; width: 44px; height: 44px; border-radius: 10px; }
 .hs-head p { margin: 2px 0 0; font-size: 13px; color: var(--ink-3); }
-.who-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.who-row .meta { font-weight: 600; }
+/* traveller initials: one even row, at most 6 per row, then the next row */
+.who-row { display: grid; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); gap: 6px; }
+.who-row .meta { font-weight: 600; padding: 4px 2px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; text-align: center; }
 .leg { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
 .leg:first-child { border-top: 0; padding-top: 2px; }
 .leg .lh { display: flex; align-items: center; gap: 8px; font-weight: 600; flex-wrap: wrap; overflow-wrap: anywhere; }
@@ -987,7 +988,7 @@ function startApp(DATA) {
       '<div class="stat"><b>' + T.hotels.length + '</b><span>' + (T.hotels.length === 1 ? 'hotel' : 'hotels') + '</span></div>' +
       '<div class="stat"><b>' + (who.length || '–') + '</b><span>travellers</span></div>' +
       '</div>';
-    if (who.length) h += '<div class="who-row">' + who.map(function (w) { return '<span class="meta">' + esc(w) + '</span>'; }).join('') + '</div>';
+    if (who.length) h += '<div class="who-row" style="--n:' + Math.min(who.length, 6) + '">' + who.map(function (w) { return '<span class="meta">' + esc(w) + '</span>'; }).join('') + '</div>';
     h += '</section>';
     return h;
   }
