@@ -292,6 +292,10 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .pay .who .arrow { color: var(--ink-3); }
 .pay .amt { font-family: var(--font-display); font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
 .bal { display: grid; grid-template-columns: 92px minmax(0, 1fr) 88px; gap: 10px; align-items: center; padding: 6px 0; font-size: 14px; }
+.bal.hd { padding: 0 0 2px; }
+.bal.hd .bhd { display: grid; grid-template-columns: 1fr 1fr; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.bal.hd .bhd span:first-child { text-align: right; padding-right: 6px; border-right: 1px solid var(--line); }
+.bal.hd .bhd span:last-child { padding-left: 6px; }
 .bal .bn { font-weight: 600; overflow-wrap: anywhere; line-height: 1.2; }
 .bal .bt { position: relative; height: 10px; }
 .bal .bt::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line); }
@@ -960,7 +964,7 @@ function startApp(DATA) {
     if (isToday) meta.push('<span class="meta today">Today</span>');
     if (drive) meta.push('<span class="meta">' + icon('drive', 14) + 'About ' + fmtMins(drive) + ' ' + travelWord(d.items) + '</span>');
     if (todo) meta.push('<span class="meta todo">' + icon('alert', 14) + todo + ' to book' + DUCKS('one', 14) + '</span>');
-    else if (d.items.length) meta.push('<span class="meta ducks">' + DUCKS('kids', 13) + 'Ducks in a row</span>');
+    else if (d.items.length) meta.push('<span class="meta ducks">' + DUCKS('kids', 13) + 'All set</span>');
     var h = '<section class="dayhead"><h2>' + esc(d.weekday) + ', ' + esc(d.label) + '</h2>' +
       '<div class="daymeta"><span class="meta">Day ' + (idx + 1) + ' of ' + days.length + '</span>' + meta.join('') + '</div></section>';
     var vms = d.items.map(prepItem);
@@ -1163,7 +1167,7 @@ function startApp(DATA) {
       '<div class="seg" role="group" aria-label="Settle by"><button type="button" id="seg-groups" data-settle="groups" aria-pressed="' + (state.settle === 'groups') + '">By group</button><button type="button" id="seg-people" data-settle="people" aria-pressed="' + (state.settle === 'people') + '">By person</button></div>';
     if (maxAbs < 0.005 && !list.length) h += '<p class="hint" style="margin:0">Everyone is square.</p></section>';
     else {
-      h += '<p class="hint">Teal gets money back, coral owes.</p><div>' + bal.map(function (p) {
+      h += '<div><div class="bal hd"><span></span><span class="bhd"><span>Owes</span><span>Gets back</span></span><span></span></div>' + bal.map(function (p) {
         var w = Math.abs(p.net) / (maxAbs || 1) * 50, cls = p.net >= 0 ? 'pos' : 'neg';
         return '<div class="bal"><span class="bn">' + esc(p.name) + '</span><span class="bt"><span class="bf ' + cls + '" style="width:' + w.toFixed(1) + '%"></span></span><span class="bv ' + cls + '">' + (p.net > 0 ? '+' : '') + m(p.net) + '</span></div>';
       }).join('') + '</div>' +
