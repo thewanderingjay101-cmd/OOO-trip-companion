@@ -7,8 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="OOO">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#FFF4E8" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121830" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FCFAF6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#283154" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-512.png">
@@ -22,13 +22,13 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Noto+Sans+JP:wght@400;600&display=swap" media="print" onload="this.media='all'">
 <style>
 /* Layout: one phone column; sticky header + day strip, timeline cards, bottom tab bar.
-   Just Follow brand (15 Nov 2026): night ink on sand, duckling yellow for "now", coral dotted trail for drives and walks,
+   Just Follow brand (15 Nov 2026): night ink on warm off-white, duckling yellow for "now", coral dotted trail for drives and walks,
    deep coral for anything still to book, pond teal for good. Bricolage Grotesque headings, Inter text. */
 :root {
-  --bg: #FFF4E8;
+  --bg: #FCFAF6;
   --surface: #FFFFFF;
-  --surface-2: #FBEBD6;
-  --line: #EBDCC8;
+  --surface-2: #F3EEE6;
+  --line: #E6DFD4;
   --ink: #1B2340;
   --ink-2: #4A3D33;
   --ink-3: #6E5D4F;
@@ -57,9 +57,9 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #121830; --surface: #1B2340; --surface-2: #262F52; --line: #323C62;
-    --ink: #F3ECE2; --ink-2: #D3C6B6; --ink-3: #ADA08F;
-    --accent: #F6B92B; --accent-soft: #3A3322; --on-accent: #1B2340;
+    --bg: #283154; --surface: #333D63; --surface-2: #3E4972; --line: #4C5784;
+    --ink: #F3ECE2; --ink-2: #D3C6B6; --ink-3: #BDB2A4;
+    --accent: #F6B92B; --accent-soft: #4E4A3C; --on-accent: #1B2340;
     --duck: #F6B92B; --on-duck: #1B2340; --trail: #F2643D;
     --persimmon: #FF9B7D; --persimmon-soft: #4E2418;
     --good: #6FD0CF; --good-soft: #15403F; --amber: #F2C86B; --amber-soft: #3F3216;
@@ -69,9 +69,9 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #121830; --surface: #1B2340; --surface-2: #262F52; --line: #323C62;
-  --ink: #F3ECE2; --ink-2: #D3C6B6; --ink-3: #ADA08F;
-  --accent: #F6B92B; --accent-soft: #3A3322; --on-accent: #1B2340;
+  --bg: #283154; --surface: #333D63; --surface-2: #3E4972; --line: #4C5784;
+  --ink: #F3ECE2; --ink-2: #D3C6B6; --ink-3: #BDB2A4;
+  --accent: #F6B92B; --accent-soft: #4E4A3C; --on-accent: #1B2340;
   --duck: #F6B92B; --on-duck: #1B2340; --trail: #F2643D;
   --persimmon: #FF9B7D; --persimmon-soft: #4E2418;
   --good: #6FD0CF; --good-soft: #15403F; --amber: #F2C86B; --amber-soft: #3F3216;
