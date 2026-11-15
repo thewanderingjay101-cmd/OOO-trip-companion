@@ -7,8 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="OOO">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#F3F5F9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0F1424" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FCFAF6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#3A4470" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-512.png">
@@ -19,52 +19,67 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- fonts load without holding up the first paint (system fonts until they arrive) -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+JP:wght@400;600&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Noto+Sans+JP:wght@400;600&display=swap" media="print" onload="this.media='all'">
 <style>
-/* Layout: one phone column; sticky header + day strip, timeline cards, bottom tab bar. Indigo ink on cool paper, persimmon for anything still to book. */
+/* Layout: one phone column; sticky header + day strip, timeline cards, bottom tab bar.
+   Just Follow brand (15 Nov 2026): night ink on warm off-white, duckling yellow for "now", coral dotted trail for drives and walks,
+   deep coral for anything still to book, pond teal for good. Bricolage Grotesque headings, Inter text. */
 :root {
-  --bg: #F3F5F9;
+  --bg: #FCFAF6;
   --surface: #FFFFFF;
-  --surface-2: #E9EDF4;
-  --line: #D8DEE8;
-  --ink: #18213A;
-  --ink-2: #4A5470;
-  --ink-3: #66708A;
-  --accent: #27408B;
-  --accent-soft: #E3E9F7;
+  --surface-2: #F3EEE6;
+  --chip: #F3EEE6;
+  --on-chip: #4A3D33;
+  --on-chip-2: #6E5D4F;
+  --line: #E6DFD4;
+  --ink: #1B2340;
+  --ink-2: #4A3D33;
+  --ink-3: #6E5D4F;
+  --accent: #1B2340;
+  --accent-soft: #FDE9B8;
   --on-accent: #FFFFFF;
-  --persimmon: #B4460F;
-  --persimmon-soft: #FBE7DA;
-  --good: #1E6B46;
-  --good-soft: #DDF0E5;
+  --duck: #F6B92B;
+  --on-duck: #1B2340;
+  --trail: #F2643D;
+  --persimmon: #B23E1C;
+  --persimmon-soft: #FDE1D6;
+  --good: #0E6B70;
+  --good-soft: #D5ECEA;
   --amber: #8A5A00;
-  --amber-soft: #F7ECCF;
-  --neg: #A3301F;
-  --pos: #1E6B46;
-  --bar: #9AA9CF;
-  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --amber-soft: #FBEBC4;
+  --neg: #B23E1C;
+  --pos: #0E6B70;
+  --bar: #F6B92B;
+  --on-bar: #1B2340;
+  --shadow: 0 4px 14px rgba(27,35,64,.06);
+  --font-display: 'Bricolage Grotesque', 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', 'Noto Sans JP', system-ui, -apple-system, 'Hiragino Sans', sans-serif;
-  --r: 14px;
+  --r: 20px;
+  --r-btn: 14px;
   --tabbar-h: 64px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0F1424; --surface: #182036; --surface-2: #222B44; --line: #2E3854;
-    --ink: #E8ECF6; --ink-2: #B5BED6; --ink-3: #98A2BD;
-    --accent: #9DB3F5; --accent-soft: #26335A; --on-accent: #0F1424;
-    --persimmon: #FFA978; --persimmon-soft: #4A2716;
-    --good: #7FD9A8; --good-soft: #173A2A; --amber: #F2C86B; --amber-soft: #3F3216;
-    --neg: #FF9C8C; --pos: #7FD9A8; --bar: #5A6C9E;
+    --bg: #3A4470; --surface: #46517F; --surface-2: #525E8E; --line: #5F6B9B; --chip: #5F6BA0; --on-chip: #FFFFFF; --on-chip-2: #E4E8F5;
+    --ink: #F3ECE2; --ink-2: #D3C6B6; --ink-3: #CFC5B8;
+    --accent: #F6B92B; --accent-soft: #625C48; --on-accent: #1B2340;
+    --duck: #F6B92B; --on-duck: #1B2340; --trail: #F2643D;
+    --persimmon: #FF9B7D; --persimmon-soft: #6A3424;
+    --good: #6FD0CF; --good-soft: #22575A; --amber: #F2C86B; --amber-soft: #3F3216;
+    --neg: #FF9B7D; --pos: #6FD0CF; --bar: #8C7A55; --on-bar: #F3ECE2;
+    --shadow: 0 4px 14px rgba(0,0,0,.25);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0F1424; --surface: #182036; --surface-2: #222B44; --line: #2E3854;
-  --ink: #E8ECF6; --ink-2: #B5BED6; --ink-3: #98A2BD;
-  --accent: #9DB3F5; --accent-soft: #26335A; --on-accent: #0F1424;
-  --persimmon: #FFA978; --persimmon-soft: #4A2716;
-  --good: #7FD9A8; --good-soft: #173A2A; --amber: #F2C86B; --amber-soft: #3F3216;
-  --neg: #FF9C8C; --pos: #7FD9A8; --bar: #5A6C9E;
+  --bg: #3A4470; --surface: #46517F; --surface-2: #525E8E; --line: #5F6B9B; --chip: #5F6BA0; --on-chip: #FFFFFF; --on-chip-2: #E4E8F5;
+  --ink: #F3ECE2; --ink-2: #D3C6B6; --ink-3: #CFC5B8;
+  --accent: #F6B92B; --accent-soft: #625C48; --on-accent: #1B2340;
+  --duck: #F6B92B; --on-duck: #1B2340; --trail: #F2643D;
+  --persimmon: #FF9B7D; --persimmon-soft: #6A3424;
+  --good: #6FD0CF; --good-soft: #22575A; --amber: #F2C86B; --amber-soft: #3F3216;
+  --neg: #FF9B7D; --pos: #6FD0CF; --bar: #8C7A55; --on-bar: #F3ECE2;
+  --shadow: 0 4px 14px rgba(0,0,0,.25);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -91,8 +106,8 @@ button { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--line);
 }
 .top .wrap { padding-block: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
-.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-.top h1 { margin: 0; font-family: var(--font-display); font-size: 22px; line-height: 1.2; font-weight: 700; text-wrap: balance; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.top h1 { margin: 0; font-family: var(--font-display); font-size: 22px; line-height: 1.2; font-weight: 800; text-wrap: balance; }
 .top .sub { font-size: 13px; color: var(--ink-3); }
 .top .sub:empty { display: none; }
 .days {
@@ -104,7 +119,7 @@ button { font: inherit; color: inherit; }
 .daychip {
   flex: 0 0 auto; scroll-snap-align: start;
   min-width: 56px; min-height: 52px; padding: 6px 10px;
-  border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
+  border-radius: var(--r-btn); border: 1px solid var(--line); background: var(--surface);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
   cursor: pointer;
 }
@@ -114,22 +129,23 @@ button { font: inherit; color: inherit; }
 .daychip .dot.todo { background: var(--persimmon); }
 .daychip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .daychip[aria-pressed="true"] .dw { color: var(--on-accent); opacity: .85; }
-.daychip[aria-pressed="true"] .dot.todo { background: var(--on-accent); }
-.daychip.today:not([aria-pressed="true"]) { border-color: var(--accent); }
+.daychip[aria-pressed="true"] .dot.todo { background: var(--duck); }
+.daychip.today:not([aria-pressed="true"]) { border-color: var(--duck); box-shadow: inset 0 0 0 1px var(--duck); }
 
 main { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 24px); }
 main .wrap { padding-block: 16px 0; display: flex; flex-direction: column; gap: 14px; }
 
 /* day head */
 .dayhead { display: flex; flex-direction: column; gap: 6px; }
-.dayhead h2 { margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.2; font-weight: 700; }
+.dayhead h2 { margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.2; font-weight: 800; }
 .daymeta { display: flex; flex-wrap: wrap; gap: 6px; }
 .meta {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
-  border-radius: 999px; background: var(--surface-2); color: var(--ink-2); font-size: 13px; font-weight: 500;
+  border-radius: 999px; background: var(--chip); color: var(--on-chip); font-size: 13px; font-weight: 500;
 }
 .meta.todo { background: var(--persimmon-soft); color: var(--persimmon); }
-.meta.today { background: var(--accent); color: var(--on-accent); }
+.meta.today { background: var(--duck); color: var(--on-duck); }
+.meta.ducks { background: var(--good-soft); color: var(--good); }
 .meta svg { flex: 0 0 auto; }
 
 /* timeline */
@@ -139,11 +155,11 @@ main .wrap { padding-block: 16px 0; display: flex; flex-direction: column; gap: 
 .time.empty::before { content: "·"; color: var(--ink-3); padding-left: 12px; }
 .card {
   min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
-  padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow);
 }
-.card.now { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.card.now { border-color: var(--duck); box-shadow: 0 0 0 2px var(--duck); }
 .cardtop { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-.kind { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.kind { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .pill.booked { background: var(--good-soft); color: var(--good); }
 .pill.to_book { background: var(--persimmon-soft); color: var(--persimmon); }
@@ -170,7 +186,7 @@ main .wrap { padding-block: 16px 0; display: flex; flex-direction: column; gap: 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .btn {
   display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px;
-  border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  border-radius: var(--r-btn); border: 1px solid var(--line); background: var(--surface);
   font-size: 14px; font-weight: 600; text-decoration: none; color: var(--accent);
 }
 .btn.primary { background: var(--accent-soft); border-color: transparent; }
@@ -205,7 +221,7 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 /* compact row for drives, flights etc */
 .mini {
   min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-  border-radius: var(--r); border: 1px dashed var(--line); color: var(--ink-2);
+  border: 0; border-left: 4px dotted var(--trail); border-radius: 0; margin-left: 6px; padding-left: 14px; color: var(--ink-2);
 }
 .mini .mt { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .mini .mn { font-weight: 600; color: var(--ink); font-size: 15px; overflow-wrap: anywhere; }
@@ -213,7 +229,7 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .mini a.ic { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent); }
 
 /* sections on trip / expenses */
-.section { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.section { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .section h3 { margin: 0; font-family: var(--font-display); font-size: 18px; font-weight: 700; }
 .section .hint { font-size: 13px; color: var(--ink-3); margin: -4px 0 0; }
 .list { display: flex; flex-direction: column; }
@@ -234,12 +250,12 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .ov-intro { margin: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink-2); }
 .ov-intro p { margin: 0; }
 .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.stat { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.stat { background: var(--chip); color: var(--on-chip); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 0; min-width: 0; }
 .stat b { font-family: var(--font-display); font-size: 20px; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.stat span { font-size: 12px; color: var(--ink-3); font-weight: 500; }
+.stat span { font-size: 12px; color: var(--on-chip-2); font-weight: 500; }
 .stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .stats.two + .list .li:first-child { padding-top: 10px; }
-.stat .sm { font-size: 12px; color: var(--ink-2); font-weight: 500; margin-top: 4px; line-height: 1.3; }
+.stat .sm { font-size: 12px; color: var(--on-chip); font-weight: 500; margin-top: 4px; line-height: 1.3; }
 .stat .sm + .sm { margin-top: 1px; }
 .steps { margin: 0; padding: 0; list-style: none; counter-reset: st; display: flex; flex-direction: column; gap: 10px; }
 .steps li { counter-increment: st; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; color: var(--ink-2); }
@@ -249,8 +265,9 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .hs-head { display: flex; align-items: center; gap: 12px; }
 .hs-head svg { flex: none; width: 44px; height: 44px; border-radius: 10px; }
 .hs-head p { margin: 2px 0 0; font-size: 13px; color: var(--ink-3); }
-.who-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.who-row .meta { font-weight: 600; }
+/* traveller initials: one even row, at most 6 per row, then the next row */
+.who-row { display: grid; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); gap: 6px; }
+.who-row .meta { font-weight: 600; padding: 4px 2px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; text-align: center; }
 .leg { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--line); }
 .leg:first-child { border-top: 0; padding-top: 2px; }
 .leg .lh { display: flex; align-items: center; gap: 8px; font-weight: 600; flex-wrap: wrap; overflow-wrap: anywhere; }
@@ -293,7 +310,7 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .bfly .half.share .bf { background: var(--accent); border-radius: 0 5px 5px 0; justify-content: flex-end; }
 .bfly .v { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
 .bfly .bf.in .v { padding: 0 7px; }
-.bfly .half.paid .bf.in .v { color: var(--ink); }
+.bfly .half.paid .bf.in .v { color: var(--on-bar); }
 .bfly .half.share .bf.in .v { color: var(--on-accent); }
 .bfly.hd { padding: 0 0 4px; }
 .bfly.hd .half { height: auto; font-size: 12px; font-weight: 600; color: var(--ink-3); padding: 0 6px; }
@@ -305,6 +322,7 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .curbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .curbar .hint { margin: 0; font-size: 13px; color: var(--ink-3); }
 .foot { font-size: 12px; color: var(--ink-3); text-align: center; padding: 8px 0 0; display: flex; flex-direction: column; gap: 4px; }
+.foot .tag { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--ink-2); }
 
 /* tab bar */
 nav.tabbar {
@@ -327,7 +345,7 @@ nav.tabbar a.hero .bub {
   border: 4px solid var(--surface); box-shadow: 0 4px 12px rgba(24,33,58,.28);
   transition: transform .15s;
 }
-nav.tabbar a.hero:not([aria-current="page"]) .bub { background: var(--accent-soft); color: var(--accent); box-shadow: 0 2px 6px rgba(24,33,58,.18); }
+nav.tabbar a.hero:not([aria-current="page"]) .bub { background: var(--accent-soft); color: var(--ink); box-shadow: 0 2px 6px rgba(24,33,58,.18); }
 nav.tabbar a.hero:not([aria-current="page"]) { color: var(--ink-3); }
 nav.tabbar a.hero:active .bub { transform: scale(.94); }
 .top .wrap { position: relative; }
@@ -914,6 +932,7 @@ function startApp(DATA) {
     if (isToday) meta.push('<span class="meta today">Today</span>');
     if (drive) meta.push('<span class="meta">' + icon('drive', 14) + 'About ' + fmtMins(drive) + ' ' + travelWord(d.items) + '</span>');
     if (todo) meta.push('<span class="meta todo">' + icon('alert', 14) + todo + ' to book</span>');
+    else if (d.items.length) meta.push('<span class="meta ducks">Ducks in a row</span>');
     var h = '<section class="dayhead"><h2>' + esc(d.weekday) + ', ' + esc(d.label) + '</h2>' +
       '<div class="daymeta"><span class="meta">Day ' + (idx + 1) + ' of ' + days.length + '</span>' + meta.join('') + '</div></section>';
     var vms = d.items.map(prepItem);
@@ -972,7 +991,7 @@ function startApp(DATA) {
       '<div class="stat"><b>' + T.hotels.length + '</b><span>' + (T.hotels.length === 1 ? 'hotel' : 'hotels') + '</span></div>' +
       '<div class="stat"><b>' + (who.length || '–') + '</b><span>travellers</span></div>' +
       '</div>';
-    if (who.length) h += '<div class="who-row">' + who.map(function (w) { return '<span class="meta">' + esc(w) + '</span>'; }).join('') + '</div>';
+    if (who.length) h += '<div class="who-row" style="--n:' + Math.min(who.length, 6) + '">' + who.map(function (w) { return '<span class="meta">' + esc(w) + '</span>'; }).join('') + '</div>';
     h += '</section>';
     return h;
   }
@@ -1116,7 +1135,7 @@ function startApp(DATA) {
       '<div class="seg" role="group" aria-label="Settle by"><button type="button" id="seg-groups" data-settle="groups" aria-pressed="' + (state.settle === 'groups') + '">By group</button><button type="button" id="seg-people" data-settle="people" aria-pressed="' + (state.settle === 'people') + '">By person</button></div>';
     if (maxAbs < 0.005 && !list.length) h += '<p class="hint" style="margin:0">Everyone is square.</p></section>';
     else {
-      h += '<p class="hint">Green gets money back, red owes.</p><div>' + bal.map(function (p) {
+      h += '<p class="hint">Teal gets money back, coral owes.</p><div>' + bal.map(function (p) {
         var w = Math.abs(p.net) / (maxAbs || 1) * 50, cls = p.net >= 0 ? 'pos' : 'neg';
         return '<div class="bal"><span class="bn">' + esc(p.name) + '</span><span class="bt"><span class="bf ' + cls + '" style="width:' + w.toFixed(1) + '%"></span></span><span class="bv ' + cls + '">' + (p.net > 0 ? '+' : '') + m(p.net) + '</span></div>';
       }).join('') + '</div>' +
@@ -1139,13 +1158,13 @@ function startApp(DATA) {
       '<div class="seg" role="group" aria-label="Shares by"><button type="button" data-shares="groups" aria-pressed="' + (state.shares !== 'people') + '">By group</button><button type="button" data-shares="people" aria-pressed="' + (state.shares === 'people') + '">By person</button></div>' +
       (sh.length ? '<div><div class="bfly hd"><span class="half paid">Paid</span><span class="half share">Share</span></div>' + sh.map(function (p) {
         return '<div class="bfly"><span class="bn">' + esc(p.name) + '</span>' + half(p.paid, 'paid') + half(p.owed, 'share') + '</div>';
-      }).join('') + '</div>' : '<p class="hint">Nothing logged yet.</p>') + '</section>';
+      }).join('') + '</div>' : '<p class="hint">Nothing logged yet. Smooth paddling so far.</p>') + '</section>';
 
     var cats = E.by_category.filter(function (c) { return c.total > 0; }).sort(function (a, b) { return b.total - a.total; });
     var maxC = cats.reduce(function (a, c) { return Math.max(a, c.total); }, 0) || 1;
     h += '<section class="section"><h3>By category</h3><p class="hint">' + m(E.total_spend) + ' spent so far across ' + E.count + ' expense' + (E.count === 1 ? '' : 's') + '.</p><div>' + (cats.length ? cats.map(function (c) {
       return '<div class="cat"><span>' + esc(c.name) + '</span><span class="cv">' + m(c.total) + ' · ' + Math.round(c.share) + '%</span><span class="cb"><i style="width:' + (c.total / maxC * 100).toFixed(1) + '%"></i></span></div>';
-    }).join('') : '<p class="hint">Nothing logged yet.</p>') + '</div></section>';
+    }).join('') : '<p class="hint">Nothing logged yet. Smooth paddling so far.</p>') + '</div></section>';
 
     // Expenses list: newest first, 5 rows, then "Show all"
     var tx = E.recent || [];
@@ -1198,7 +1217,7 @@ function startApp(DATA) {
         (orig ? '<div class="mq">↪ Re ' + esc(orig.from) + ': ' + esc(snip(orig.text, 80)) + '</div>' : '') +
         '<div class="mt">' + esc(m.text) + '</div>' + (m.reply ? '<div class="mr">' + esc(m.reply) + '</div>' : '') +
         (pend ? '<div class="mact"><button type="button" class="linkbtn" data-ibx-re="' + m.row + '">Reply</button></div>' : '') + '</div>';
-    }).join('') + '</div>' : '<p class="hint">No messages yet.</p>') + '</section>';
+    }).join('') + '</div>' : '<p class="hint">No messages yet. All quiet on the pond.</p>') + '</section>';
     return h;
   }
   var inboxLoading = false;
@@ -1217,7 +1236,7 @@ function startApp(DATA) {
     if (!text || state.sending) return;
     state.sending = true; state.inboxMsg = ''; render();
     callServer('postInbox', [window.__tripKey || META.key, window.__tripCred, state.me, text, state.replyTo || 0],
-      function (json) { state.sending = false; state.draft = ''; state.replyTo = 0; state.inbox = JSON.parse(json); state.inboxMsg = 'Sent. It will be applied within about an hour.'; render(); },
+      function (json) { state.sending = false; state.draft = ''; state.replyTo = 0; state.inbox = JSON.parse(json); state.inboxMsg = 'Got it. Logged. Quack. It’ll be applied within about an hour.'; render(); },
       function (err) {
         state.sending = false;
         state.inboxMsg = /busy/.test(String(err && err.message || err)) ? 'Too many messages just now. Try again in a few minutes.' : "Couldn't send. Check your connection and try again.";
@@ -1243,7 +1262,7 @@ function startApp(DATA) {
     renderDays();
     if (state.tab === 'inbox') { view.innerHTML = renderInbox(); var ta = document.getElementById('ibx-text'); if (ta) ta.value = state.draft || ''; return; }
     var body = state.tab === 'plan' ? renderPlan() : state.tab === 'trip' ? renderTrip() : renderExpenses();
-    body += '<div class="foot"><span>' + esc(refreshedText()) + (LIVE ? ' · Pull down to refresh' : '') + '</span></div>';
+    body += '<div class="foot"><span class="tag">We plan. You just follow.</span><span>' + esc(refreshedText()) + (LIVE ? ' · Pull down to refresh' : '') + '</span></div>';
     view.innerHTML = body;
   }
   function fromHash() {
@@ -1317,7 +1336,7 @@ function startApp(DATA) {
   }
   function ptrHide() { ptr.className = 'ptr done'; ptr.style.transform = ''; ptr.style.opacity = ''; }
   function doRefresh() {
-    busy = true; ptr.className = 'ptr busy'; ptr.style.transform = ''; ptr.style.opacity = ''; ptrT.textContent = 'Refreshing…';
+    busy = true; ptr.className = 'ptr busy'; ptr.style.transform = ''; ptr.style.opacity = ''; ptrT.textContent = 'Rounding up the latest…';
     function finish(text) { ptrT.textContent = text; setTimeout(function () { busy = false; ptrHide(); }, text === 'Updated' ? 600 : 2200); }
     if (!(canCallServer() && window.__tripCred)) { location.reload(); return; }
     callServer('refreshTrip', [window.__tripKey || META.key, window.__tripCred],
@@ -1373,7 +1392,7 @@ function startApp(DATA) {
   document.getElementById('title').textContent = 'OOO';
   if (!boot || !boot.any) {
     document.getElementById('sub').textContent = '';
-    view.innerHTML = '<div class="section gate"><h3>No trip set up yet</h3><p class="hint">Ask JY to add the trip to the web app.</p></div>';
+    view.innerHTML = '<div class="section gate"><h3>No trip set up yet</h3><p class="hint">Ask your organiser to add the trip.</p></div>';
     return;
   }
   // Trips this device has unlocked before: localStorage 'trip-<key>-pin' holds 'k:<key>'. Only these are ever listed.
@@ -1401,9 +1420,9 @@ function startApp(DATA) {
     '<rect width="512" height="512" fill="url(#lg)"/><g fill="none" stroke="#fff" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"><path d="M206 168v-26a20 20 0 0 1 20-20h60a20 20 0 0 1 20 20v26"/><rect x="126" y="168" width="260" height="200" rx="34"/><path d="M196 168v200M316 168v200"/></g>' +
     '<circle cx="176" cy="396" r="14" fill="#fff"/><circle cx="336" cy="396" r="14" fill="#fff"/><path transform="translate(330 96) rotate(35)" d="M0 -44 L10 -10 L46 8 L46 20 L10 10 L6 34 L18 44 L18 52 L0 46 L-18 52 L-18 44 L-6 34 L-10 10 L-46 20 L-46 8 L-10 -10 Z" fill="#FFD27A"/></svg>';
   window.__oooLogo = LOGO.replace(/id="lg"/, 'id="lg2"').replace('url(#lg)', 'url(#lg2)');
-  view.innerHTML = '<div class="splash" id="splash" hidden>' + LOGO + '<h3>OOO</h3><p>Opening your trip…</p></div>' +
+  view.innerHTML = '<div class="splash" id="splash" hidden>' + LOGO + '<h3>OOO</h3><p>Lining up the ducklings…</p></div>' +
     '<form class="section gate" id="gate" autocomplete="off">' +
-    '<h3>Open your trip</h3><p class="hint">Enter the PIN JY shared with you. This device remembers it after the first time.</p>' +
+    '<h3>Open your trip</h3><p class="hint">Enter the PIN your organiser shared. We’ll remember it after that, so you can just follow.</p>' +
     '<label for="pin" class="sr">Trip PIN</label>' +
     '<input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN" required>' +
     '<button type="submit" class="btn primary" id="unlock">Open trip</button>' +
@@ -1443,7 +1462,7 @@ function startApp(DATA) {
     if (creds[k] !== 'k:' + c.deviceKey && !(want === k && boot.k === c.deviceKey)) return null;
     return c;
   }
-  var MSG = { wrong: "That PIN didn't work. Check it and try again.", locked: 'Too many wrong tries. Wait 10 minutes and try again.', setup: "This trip isn't set up yet. Ask JY." };
+  var MSG = { wrong: "That PIN didn't work. Check it and try again.", locked: 'Too many wrong tries. Take a 10-minute paddle, then try again.', setup: "This trip isn’t ready yet. Ask your organiser to finish setting it up." };
   // Server answered with the trip: remember its keys, put them in the link, show it.
   // A stale answer (last good copy from the cache) is shown at once, then refreshed in the background.
   function opened(d, pin, saved) {
