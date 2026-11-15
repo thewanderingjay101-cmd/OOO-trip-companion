@@ -439,6 +439,25 @@ nav.tabbar a.hero:active .bub { transform: scale(.94); }
   </div>
 </nav>
 
+<script>
+/* Appearance: Auto follows the phone; Light or Dark is saved per device ('jf-theme') and set on <html data-theme>,
+   which the colour tokens above already honour. Runs before the page draws, so there is no flash. */
+window.__setTheme = function (t) {
+  var r = document.documentElement;
+  if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t); else { r.removeAttribute('data-theme'); t = ''; }
+  try { if (t) localStorage.setItem('jf-theme', t); else localStorage.removeItem('jf-theme'); } catch (e) {}
+  // status bar colour on the GitHub page: follow the forced choice, or the phone when on Auto
+  var m = document.querySelectorAll('meta[name="theme-color"]');
+  for (var i = 0; i < m.length; i++) {
+    if (!m[i].hasAttribute('data-media')) m[i].setAttribute('data-media', m[i].getAttribute('media') || '');
+    var dk = /dark/.test(m[i].getAttribute('data-media'));
+    if (t) { m[i].removeAttribute('media'); m[i].setAttribute('content', t === 'dark' ? '#3A4470' : '#FCFAF6'); }
+    else { if (m[i].getAttribute('data-media')) m[i].setAttribute('media', m[i].getAttribute('data-media')); m[i].setAttribute('content', dk ? '#3A4470' : '#FCFAF6'); }
+  }
+};
+window.__getTheme = function () { try { var t = localStorage.getItem('jf-theme'); return t === 'light' || t === 'dark' ? t : 'auto'; } catch (e) { return 'auto'; } };
+(function () { var t = window.__getTheme(); if (t !== 'auto') window.__setTheme(t); })();
+</script>
 <script id="trip-data" type="application/json">null</script>
 <script id="trip-boot" type="application/json">{"api": "https://script.google.com/macros/s/AKfycbwpoGwMWlE_InveJ3rCfw1H_9yewjGpVEWfT-dUrU4Cd0sDZ38SUswcaOFjjyUA1y16/exec"}</script>
 <script>
@@ -1137,6 +1156,12 @@ function startApp(DATA) {
           '<a class="btn primary" href="' + esc(B.launcher + '?setup=1' + ksq) + '"' + (B.pages ? '' : ' target="_blank" rel="noopener"') + ' style="justify-content:center">Set up the icon</a></section>';
       }
     }
+    var thm = window.__getTheme ? window.__getTheme() : 'auto';
+    h += '<section class="section"><h3>Night mode</h3>' +
+      '<div class="seg" role="group" aria-label="Night mode">' + [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']].map(function (o) {
+        return '<button type="button" data-theme-set="' + o[0] + '" aria-pressed="' + (thm === o[0]) + '">' + o[1] + '</button>';
+      }).join('') + '</div>' +
+      '<p class="hint">Auto follows your phone\'s setting. Saved on this phone only.</p></section>';
     return h;
   }
 
@@ -1333,6 +1358,8 @@ function startApp(DATA) {
     var sb = e.target.closest('[data-shares]');
     if (sb) { state.shares = sb.getAttribute('data-shares'); store(SK + 'shares', state.shares); render(); return; }
     if (e.target.closest('[data-tx-all]')) { state.txAll = !state.txAll; render(); return; }
+    var tb = e.target.closest('[data-theme-set]');
+    if (tb) { if (window.__setTheme) window.__setTheme(tb.getAttribute('data-theme-set')); render(); return; }
     var cb = e.target.closest('[data-cur]');
     if (cb) { state.cur = cb.getAttribute('data-cur'); store(SK + 'cur', state.cur); render(); return; }
   });
