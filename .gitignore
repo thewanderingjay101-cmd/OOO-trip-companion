@@ -1,0 +1,4 @@
+app/appscript/project-import.json
+__pycache__/
+*.pyc
+app/appscript/.clasp.json
