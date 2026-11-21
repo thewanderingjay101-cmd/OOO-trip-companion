@@ -1,0 +1,21 @@
+{
+  "name": "JF Beta",
+  "short_name": "JF Beta",
+  "display": "standalone",
+  "background_color": "#FCFAF6",
+  "theme_color": "#FCFAF6",
+  "icons": [
+    {
+      "src": "../just-follow-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../just-follow-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
