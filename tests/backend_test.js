@@ -42,6 +42,8 @@ function makeWorld(props) {
           if (!rows) throw new Error('Unable to parse range: ' + range);
           if (a1 === '1:1') return { values: rows.slice(0, 1) };
           const box = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(a1);
+          const cols = /^([A-Z]+)(\d+):([A-Z]+)$/.exec(a1);
+          if (cols) return { values: rows.slice(Number(cols[2]) - 1).map(r => r.slice(colIndex(cols[1]), colIndex(cols[3]) + 1)) };
           if (box) return { values: rows.slice(Number(box[2]) - 1, Number(box[4])).map(r => r.slice(colIndex(box[1]), colIndex(box[3]) + 1)) };
           return { values: rows.map(r => r.slice()) };
         },
@@ -182,14 +184,13 @@ function tripsSheet(world, withOrganiser) {
   check(d.changes && d.changes.list.length === 0, 'a damaged snapshot is replaced, the read still works');
 }
 
-// 5. Group votes (Votes.js): the request waits in the inbox as Voting; most votes wins; a tie waits for the organiser
+// 5. Group votes (Votes.js): the request waits in the inbox as Voting; most votes wins; a tie goes to the organiser in the inbox
 {
   const w = makeWorld({ APP_ENV: 'test' });
   tripsSheet(w, false);
   w.ctx.setupMembers();
   const mid = w.props.MEMBERS_SHEET, M = w.files[mid].tabs;
-  M['Trip settings'].push(['t-one', 'Organiser name', 'TMN', '', '']);
-  w.ctx.postInbox('t-one', '1111', 'MW', 'Lunch 2000 yen paid by MW', 0);
+    w.ctx.postInbox('t-one', '1111', 'MW', 'Lunch 2000 yen paid by MW', 0);
   let r = JSON.parse(w.ctx.startVote('t-one', '1111', 'KA', 'Swap dinner for sushi', 'hour'));
   const inbox = w.files[w.props['INBOX_t-one']].tabs.Inbox;
   const row = r.inbox.find(m => m.text === 'Swap dinner for sushi');
@@ -203,7 +204,7 @@ function tripsSheet(world, withOrganiser) {
   w.ctx.castVote('t-one', '1111', vid, 'TMN', 0);
   let g = JSON.parse(w.ctx.castVote('t-one', '1111', vid, 'MW', 1));
   const gv = g.votes.find(v => v.id === vid);
-  check(gv.counts.join() === '2,1' && gv.voters.length === 3 && g.organiser === 'TMN', 'votes are counted, one per name (' + gv.counts.join() + ')');
+  check(gv.counts.join() === '2,1' && gv.voters.length === 3, 'votes are counted, one per name (' + gv.counts.join() + ')');
   w.ctx.closeVotes();
   check(vrow(vid)[col('Status')] === 'Open' && inbox[row.row - 1][3] === 'Voting', 'a vote stays open until its closing time');
   vrow(vid)[col('Closes')] = new Date(Date.now() - 60e3).toISOString();
@@ -220,15 +221,14 @@ function tripsSheet(world, withOrganiser) {
   w.ctx.castVote('t-one', '1111', tid, 'MW', 1);
   vrow(tid)[col('Closes')] = new Date(Date.now() - 60e3).toISOString();
   g = JSON.parse(w.ctx.getVotes('t-one', '1111'));
-  check(g.votes.find(v => v.id === tid).status === 'Tie' && inbox[trow - 1][3] === 'Voting' && /organiser decides/.test(inbox[trow - 1][4]),
-    'a tie waits for the organiser (inbox row stays Voting)');
+  check(g.votes.find(v => v.id === tid).status === 'Tie' && inbox[trow - 1][3] === 'Needs JY' && /organiser decides/i.test(inbox[trow - 1][4]),
+    'a tie goes to the organiser in the inbox (Needs JY): ' + inbox[trow - 1].slice(3, 5).join(' / '));
+  check(!('decideVote' in w.ctx.API_FNS), 'nobody can decide a tie from the app by picking a name');
+  inbox[trow - 1][3] = 'Skipped';  // the organiser decides in the inbox
+  g = JSON.parse(w.ctx.getVotes('t-one', '1111'));
+  const tv = g.votes.find(v => v.id === tid);
+  check(tv.status === 'Decided' && /^No, keep the plan \(organiser decided/.test(tv.result), 'the organiser\'s pick in the inbox closes the vote');
   let threw = null;
-  try { w.ctx.decideVote('t-one', '1111', tid, 'KA', 0); } catch (e) { threw = e; }
-  check(threw && /wrong/.test(threw.message) && vrow(tid)[col('Status')] === 'Tie', 'only the organiser can decide a tie');
-  w.ctx.decideVote('t-one', '1111', tid, 'TMN', 1);
-  check(vrow(tid)[col('Status')] === 'Decided' && inbox[trow - 1][3] === 'Skipped' && /TMN decided the tie/.test(inbox[trow - 1][4]),
-    'the organiser\'s pick closes it: no wins, the row becomes Skipped');
-  threw = null;
   try { w.ctx.startVote('t-one', '9999', 'KA', 'x', 'hour'); } catch (e) { threw = e; }
   check(threw && /wrong/.test(threw.message), 'votes need the trip PIN');
 }

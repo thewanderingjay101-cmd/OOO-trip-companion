@@ -613,7 +613,7 @@ function startApp(DATA) {
   function tripTitle() { return META.name + (days.length ? ' · ' + rangeText(days[0].date, days[days.length - 1].date) : ''); }
   document.getElementById('sub').textContent = '';
   var view = document.getElementById('view');
-  var state = { tab: 'plan', from: 'plan', day: null, settle: 'groups', inbox: null, draft: '', me: null, sending: false, toast: '', replyTo: 0, votes: null, organiser: '', ask: false, askClose: 'tonight' };
+  var state = { tab: 'plan', from: 'plan', day: null, settle: 'groups', inbox: null, draft: '', me: null, sending: false, toast: '', replyTo: 0, votes: null, ask: false, askClose: 'tonight' };
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 
@@ -1485,15 +1485,17 @@ function startApp(DATA) {
     return m < 540 ? 'by about 9am' : m < 780 ? 'by about 1pm' : m < 1020 ? 'by about 5pm' : 'by about 9am tomorrow';
   }
   function reqHtml(m) {
-    var st = reqState(m), orig = m.re ? inboxRow(m.re) : null, res = '';
+    var st = reqState(m), tv = voteForRow(m.row);
+    if (tv && tv.status === 'Tie' && st[1] === 'ask') st = ['Tied vote', 'vote'];  // the organiser decides; nothing for the sender to answer
+    var orig = m.re ? inboxRow(m.re) : null, res = '';
     if (st[1] === 'wait') res = 'Will be applied ' + nextRun() + '.';
     else if (st[1] === 'ask') res = m.reply || 'Your organiser has a question.';
     else if (st[1] === 'no') res = m.reply || 'Not applied.';
     else if (st[1] === 'done') res = m.reply || (m.done ? 'Applied ' + m.done : 'Applied');
+    else if (st[1] === 'vote' && tv && tv.status === 'Tie') res = 'The vote tied ' + tv.counts[0] + '–' + tv.counts[1] + '. The organiser decides.';
     else if (st[1] === 'vote') {
       var v = voteForRow(m.row);
-      res = v ? (v.status === 'Tie' ? 'Tied ' + v.counts[0] + '–' + v.counts[1] + '. ' + (state.organiser || 'The organiser') + ' decides.' :
-        v.counts[0] + ' yes, ' + v.counts[1] + ' no so far. Voting closes ' + voteWhen(v.closes) + '.') : (m.reply || 'The group is voting on this.');
+      res = v ? v.counts[0] + ' yes, ' + v.counts[1] + ' no so far. Voting closes ' + voteWhen(v.closes) + '.' : (m.reply || 'The group is voting on this.');
     }
     return '<div class="req"><div class="req-h"><span>' + esc(m.time) + '</span><span class="st ' + st[1] + '">' + esc(st[0]) + '</span></div>' +
       (orig ? '<div class="mq">↪ Re: ' + esc(snip(orig.text, 80)) + '</div>' : '') +
@@ -1629,7 +1631,7 @@ function startApp(DATA) {
     if (votesLoading || !CAN_RUN || !window.__tripCred) return;
     votesLoading = true;
     callServer('getVotes', [window.__tripKey || META.key, window.__tripCred],
-      function (json) { votesLoading = false; var r = JSON.parse(json); state.votes = r.votes || []; state.organiser = r.organiser || ''; render(); },
+      function (json) { votesLoading = false; state.votes = JSON.parse(json).votes || []; render(); },
       function () { votesLoading = false; state.votes = state.votes || []; });
   }
   function voteForRow(row) { return (state.votes || []).filter(function (v) { return v.row === row; })[0] || null; }
@@ -1644,7 +1646,7 @@ function startApp(DATA) {
   }
   function voteOpen(v) { return v.status === 'Open' && new Date(v.closes).getTime() > Date.now(); }
   function myVote(v) { var m = (v.voters || []).filter(function (x) { return x.name === state.me; })[0]; return m ? m.choice : -1; }
-  function needsMyVote() { return meOk() && (state.votes || []).some(function (v) { return voteOpen(v) && myVote(v) < 0; }); }
+  function needsMyVote() { return meOk() && (state.votes || []).some(function (v) { return voteOpen(v) && v.by !== state.me && myVote(v) < 0; }); }
   function voteHtml(v) {
     var open = voteOpen(v), tie = v.status === 'Tie', mine = myVote(v), total = v.counts[0] + v.counts[1];
     var k = open ? '<span>Group vote</span><span class="when">Closes ' + esc(voteWhen(v.closes)) + '</span>' :
@@ -1661,12 +1663,8 @@ function startApp(DATA) {
     }).filter(Boolean).join(' · ');
     if (who) h += '<div class="vote-who">' + esc(who) + '</div>';
     if (open && !meOk()) h += '<p class="hint" style="margin:0">Pick your name in <a href="#me" data-go="me">Me</a> to vote.</p>';
-    if (tie) {
-      h += '<div class="vote-res">Tied ' + v.counts[0] + '–' + v.counts[1] + '. ' + esc(state.organiser || 'The organiser') + ' decides.</div>';
-      if (state.organiser && state.me === state.organiser) h += '<div class="bk-acts">' + v.options.map(function (o, i) {
-        return '<button type="button" class="bk-btn" data-decide="' + esc(v.id) + '" data-choice="' + i + '">' + esc(o) + '</button>';
-      }).join('') + '</div>';
-    } else if (!open) h += '<div class="vote-res">' + esc(v.result || 'Closed') + '</div>';
+    if (tie) h += '<div class="vote-res">Tied ' + v.counts[0] + '–' + v.counts[1] + '. The organiser decides.</div>';
+    else if (!open) h += '<div class="vote-res">' + esc(v.result || 'Closed') + '</div>';
     return h + '</div>';
   }
   function votesSection() {
@@ -1680,7 +1678,7 @@ function startApp(DATA) {
   function sendVote(fn, id, choice) {
     if (!meOk()) { goTab('me'); return; }
     callServer(fn, [window.__tripKey || META.key, window.__tripCred, id, state.me, choice],
-      function (json) { var r = JSON.parse(json); state.votes = r.votes || []; state.organiser = r.organiser || ''; render(); },
+      function (json) { state.votes = JSON.parse(json).votes || []; render(); },
       function (err) { state.toast = /closed/.test(String(err && err.message || err)) ? 'That vote has closed.' : "Couldn't save your vote. Try again."; votesLoading = false; loadVotes(); drawChat(); });
   }
   function renderGroup() {
@@ -1793,8 +1791,6 @@ function startApp(DATA) {
     if (ac) { state.askClose = ac.getAttribute('data-ask-close'); drawChat(); return; }
     var vb = e.target.closest('[data-vote]');
     if (vb) { sendVote('castVote', vb.getAttribute('data-vote'), Number(vb.getAttribute('data-choice'))); return; }
-    var db = e.target.closest('[data-decide]');
-    if (db) { sendVote('decideVote', db.getAttribute('data-decide'), Number(db.getAttribute('data-choice'))); return; }
     if (e.target.closest('[data-chg-all]')) { state.chgAll = !state.chgAll; render(); return; }
     if (e.target.closest('[data-tx-all]')) { state.txAll = !state.txAll; render(); return; }
     var tb = e.target.closest('[data-theme-set]');

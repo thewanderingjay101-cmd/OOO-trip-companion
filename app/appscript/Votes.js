@@ -6,15 +6,16 @@
  * alone. When the vote closes, most votes wins:
  *   - Yes wins: the inbox row becomes "Waiting" (the next run applies it), Reply says how the vote went.
  *   - No wins: the inbox row becomes "Skipped" ("Not done" in the app), Reply says the group kept the plan.
- *   - A tie (or nobody voted): the vote waits for the organiser, who picks the winner in the app.
+ *   - A tie (or nobody voted): the inbox row becomes "Needs JY" and the organiser decides it from the inbox, by
+ *     setting its Status to Waiting (do it) or Skipped (keep the plan). The app never lets a name decide a tie: the
+ *     trip PIN is shared, so a name picked on a phone can't prove who is holding it (until email sign-in, task 7).
  * Votes close at their time when anyone opens the trip (getVotes) and from the closeVotes trigger
  * (Triggers > closeVotes, time-driven, every 5 or 10 minutes) for when nobody does.
  *
  * Storage: the app's own Members sheet, tabs Votes and Ballots (columns matched by name; the extra columns
  * "Inbox row" on Votes and "Name" on Ballots are added at the end the first time they are needed). Until email
- * sign-in (task 7) people are known by the name picked in "Who are you?" on their phone, as for the inbox.
- * The organiser is the Trip settings row "Organiser name" for the trip, else the first traveller in the
- * expense sheet. No inbox column changes.
+ * sign-in (task 7) people are known by the name picked (once, then locked) in "Who are you?" on their phone,
+ * as for the inbox. No inbox column changes.
  */
 var VOTE_OPTIONS = ['Yes, do it', 'No, keep the plan'];
 var VOTE_KEEP_MS = 2 * 864e5;  // closed votes stay on Group for 2 days
@@ -64,18 +65,6 @@ function voteCloses_(trip, choice, now) {
   return tonight.getTime() - now.getTime() < 3600e3 ? hour : tonight;
 }
 
-function organiserName_(trip) {
-  try {
-    var row = membersRows_('Trip settings').filter(function (r) { return r.Trip === trip.key && r.Setting === 'Organiser name' && r.Value; }).pop();
-    if (row) return cleanName_(row.Value);
-  } catch (e) { /* fall back below */ }
-  try {
-    var data = getTripData_(trip, false, true);
-    var p = ((data && data.expenses && data.expenses.by_person) || [])[0];
-    return p ? cleanName_(p.name) : '';
-  } catch (e2) { return ''; }
-}
-
 function voteRows_(tripKey) {
   return membersRows_('Votes').filter(function (v) { return !tripKey || v.Trip === tripKey; });
 }
@@ -105,10 +94,10 @@ function setInboxRow_(trip, row, status, reply) {
 function countText_(counts) { return counts[0] + ' yes, ' + counts[1] + ' no'; }
 
 /** Closes one vote with a winner (0 yes, 1 no) and passes the outcome to the inbox row. */
-function finishVote_(trip, v, winner, counts, how) {
-  membersUpdate_('Votes', v._row, { 'Status': 'Decided', 'Result': VOTE_OPTIONS[winner] + (how ? ' (' + how + ')' : '') });
-  if (winner === 0) setInboxRow_(trip, v['Inbox row'], 'Waiting', 'Group vote: ' + countText_(counts) + (how ? ', ' + how : '') + '.');
-  else setInboxRow_(trip, v['Inbox row'], 'Skipped', 'The group kept the plan (' + countText_(counts) + (how ? ', ' + how : '') + ').');
+function finishVote_(trip, v, winner, counts) {
+  membersUpdate_('Votes', v._row, { 'Status': 'Decided', 'Result': VOTE_OPTIONS[winner] });
+  if (winner === 0) setInboxRow_(trip, v['Inbox row'], 'Waiting', 'Group vote: ' + countText_(counts) + '.');
+  else setInboxRow_(trip, v['Inbox row'], 'Skipped', 'The group kept the plan (' + countText_(counts) + ').');
 }
 
 /** Closes every open vote whose time has passed (all trips, or one). Returns how many it closed. */
@@ -124,14 +113,29 @@ function closeDueVotes_(tripKey, now) {
       var trip = trips.filter(function (t) { return t.key === v.Trip; })[0];
       if (!trip) return;
       var t = tally_(v.Vote, ballots), c = t.counts;
-      if (c[0] !== c[1]) finishVote_(trip, v, c[0] > c[1] ? 0 : 1, c, '');
+      if (c[0] !== c[1]) finishVote_(trip, v, c[0] > c[1] ? 0 : 1, c);
       else {
         membersUpdate_('Votes', v._row, { 'Status': 'Tie', 'Result': '' });
-        setInboxRow_(trip, v['Inbox row'], 'Voting', 'Tied ' + countText_(c) + '. The organiser decides.');
+        setInboxRow_(trip, v['Inbox row'], 'Needs JY', 'Group vote tied (' + countText_(c) + '). The organiser decides: Status Waiting does it, Skipped keeps the plan.');
       }
     });
   } finally { lock.releaseLock(); }
   return due.length;
+}
+
+/** A tie is decided in the inbox: once its row is no longer "Needs JY", the vote takes that outcome. */
+function settleTies_(trip, votes) {
+  var ties = votes.filter(function (v) { return v.Status === 'Tie' && Number(v['Inbox row']) >= 2; });
+  var id = ties.length && inboxId_(trip, false);
+  if (!id) return;
+  var rows = (Sheets.Spreadsheets.Values.get(id, 'Inbox!D1:D').values || []);
+  ties.forEach(function (v) {
+    var st = String((rows[Number(v['Inbox row']) - 1] || [])[0] || '').trim().toLowerCase();
+    var yes = st === 'waiting' || st === 'done';
+    if (!yes && st !== 'skipped' && st !== 'not done') return;  // still Needs JY (or anything else): leave it
+    v.Status = 'Decided'; v.Result = VOTE_OPTIONS[yes ? 0 : 1] + ' (organiser decided the tie)';
+    membersUpdate_('Votes', v._row, { 'Status': v.Status, 'Result': v.Result });
+  });
 }
 
 /** Trigger: Triggers > Add trigger > closeVotes, time-driven, every 5 or 10 minutes. */
@@ -142,18 +146,19 @@ function closeVotes() {
 /** The trip's votes for the page: open ones, ties and those closed in the last 2 days. */
 function getVotes(key, cred) {
   var trip = checkAccess_(key, cred);
-  if (!membersId_(false)) return JSON.stringify({ votes: [], organiser: '' });
+  if (!membersId_(false)) return JSON.stringify({ votes: [] });
   votesReady_();
   closeDueVotes_(trip.key);
-  var ballots = membersRows_('Ballots'), now = Date.now();
-  var votes = voteRows_(trip.key).filter(function (v) {
+  var ballots = membersRows_('Ballots'), now = Date.now(), rows = voteRows_(trip.key);
+  try { settleTies_(trip, rows); } catch (err) { console.error('settleTies: ' + err.message); }
+  var votes = rows.filter(function (v) {
     return v.Status === 'Open' || v.Status === 'Tie' || now - new Date(v.Closes).getTime() < VOTE_KEEP_MS;
   }).map(function (v) {
     var t = tally_(v.Vote, ballots);
     return { id: v.Vote, question: v.Question, by: v['Created by'], created: v.Created, closes: v.Closes,
       status: v.Status, result: v.Result, row: Number(v['Inbox row']) || 0, options: VOTE_OPTIONS, counts: t.counts, voters: t.voters };
   });
-  return JSON.stringify({ votes: votes, organiser: organiserName_(trip) });
+  return JSON.stringify({ votes: votes });
 }
 
 /** "Ask the group first": the request goes to the inbox as Voting, and a vote opens. closes: hour | tonight | tomorrow. */
@@ -197,24 +202,6 @@ function castVote(key, cred, voteId, name, choice) {
     var mine = membersRows_('Ballots').filter(function (b) { return b.Vote === v.Vote && b.Name === name; })[0];
     if (mine) membersUpdate_('Ballots', mine._row, { 'Choice': choice, 'Time': new Date().toISOString() });
     else membersAppend_('Ballots', { 'Vote': v.Vote, 'Name': name, 'Choice': choice, 'Time': new Date().toISOString() });
-  } finally { lock.releaseLock(); }
-  return getVotes(key, cred);
-}
-
-/** The organiser picks the winner of a tied vote. name must be the trip's organiser name. */
-function decideVote(key, cred, voteId, name, choice) {
-  var trip = checkAccess_(key, cred);
-  name = cleanName_(name);
-  choice = Number(choice);
-  if (!(choice === 0 || choice === 1)) throw new Error('empty');
-  var org = organiserName_(trip);
-  if (!org || name !== org) throw new Error('wrong');
-  var lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    var v = voteRows_(trip.key).filter(function (x) { return x.Vote === String(voteId); })[0];
-    if (!v || v.Status !== 'Tie') throw new Error('closed');
-    finishVote_(trip, v, choice, tally_(v.Vote, membersRows_('Ballots')).counts, name + ' decided the tie');
   } finally { lock.releaseLock(); }
   return getVotes(key, cred);
 }

@@ -203,8 +203,7 @@ var API_FNS = {
   postInbox: function (a) { return postInbox(a[0], a[1], a[2], a[3], a[4]); },
   getVotes: function (a) { return getVotes(a[0], a[1]); },
   startVote: function (a) { return startVote(a[0], a[1], a[2], a[3], a[4]); },
-  castVote: function (a) { return castVote(a[0], a[1], a[2], a[3], a[4]); },
-  decideVote: function (a) { return decideVote(a[0], a[1], a[2], a[3], a[4]); }
+  castVote: function (a) { return castVote(a[0], a[1], a[2], a[3], a[4]); }
 };
 var API_ERRORS = ['needpin', 'wrong', 'locked', 'setup', 'busy', 'empty', 'closed'];
 
