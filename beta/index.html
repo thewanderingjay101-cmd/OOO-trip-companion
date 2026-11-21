@@ -489,7 +489,7 @@ body.has-chat main { padding-bottom: calc(var(--tabbar-h) + var(--chat-h) + env(
     <div class="chat-row">
       <button type="button" class="chat-hist" id="chat-hist" aria-label="Messages"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span class="badge" id="chat-badge" hidden></span></button>
       <label for="chat-text" class="sr">Message to the trip</label>
-      <div class="chat-box"><textarea id="chat-text" rows="1" maxlength="1500" placeholder="Tell the trip something…" enterkeyhint="send"></textarea>
+      <div class="chat-box"><textarea id="chat-text" rows="1" maxlength="1500" placeholder="Suggest a change to the trip…" enterkeyhint="send"></textarea>
       <button type="submit" class="chat-go" id="chat-go" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
     </div>
   </div>
@@ -1481,7 +1481,7 @@ function startApp(DATA) {
     document.getElementById('chat-badge').hidden = !n;
     hb.setAttribute('aria-label', 'Messages' + (n ? ', ' + n + ' still open' : ''));
     var ta = document.getElementById('chat-text');
-    ta.placeholder = state.tab === 'bookings' ? 'Ask about a booking…' : 'Tell the trip something…';
+    ta.placeholder = state.tab === 'expenses' ? 'Log an expense…' : 'Suggest a change to the trip…';
     if (ta.value !== (state.draft || '') && document.activeElement !== ta) ta.value = state.draft || '';
     var go = document.getElementById('chat-go'); go.disabled = !!state.sending;
     var re = state.replyTo && inboxRow(state.replyTo), rb = document.getElementById('chat-re');
