@@ -444,6 +444,18 @@ body.has-chat main { padding-bottom: calc(var(--tabbar-h) + var(--chat-h) + env(
 .bk-todo .t { font-weight: 600; color: var(--persimmon); overflow-wrap: anywhere; }
 .bk-todo .r { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
 .bk .meta.ducks { align-self: flex-start; }
+/* My requests (task 11) */
+.req { border-top: 1px solid var(--line); padding: 10px 0 4px; display: flex; flex-direction: column; gap: 4px; }
+.req:first-child { border-top: 0; padding-top: 0; }
+.req-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); }
+.req p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.req-r { font-size: 13px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 7px 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.st { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.st.wait { background: var(--amber-soft); color: var(--amber); }
+.st.vote { background: var(--accent-soft); color: var(--ink); }
+.st.ask { background: var(--persimmon-soft); color: var(--persimmon); }
+.st.done { background: var(--good-soft); color: var(--good); }
+.st.no { background: var(--surface-2); color: var(--ink-2); }
 /* people on Group */
 .person { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
 .person:first-child { border-top: 0; padding-top: 2px; }
@@ -1445,30 +1457,56 @@ function startApp(DATA) {
      "Who are you?" on this phone. The clock button opens the messages list. */
   var CAN_RUN = canCallServer();
   function travellers() { return ((DATA.expenses && DATA.expenses.by_person) || []).map(function (p) { return p.name; }).filter(Boolean); }
-  var STATUS_CLS = { done: 'booked', pending: 'to_book', 'needs jy': 'to_book', waiting: 'bookable', skipped: 'walk_in' };
   function snip(t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
   function inboxRow(r) { return (state.inbox || []).filter(function (m) { return m.row === r; })[0]; }
   function meOk() { return !!state.me && travellers().indexOf(state.me) > -1; }
   // still open messages sent from this phone's name: the number on the clock button
   function openCount() {
     if (!state.inbox || !meOk()) return 0;
-    return state.inbox.filter(function (m) { var st = String(m.status || 'Waiting').toLowerCase(); return m.from === state.me && (st === 'waiting' || st === 'pending' || st === 'needs jy'); }).length;
+    return state.inbox.filter(function (m) { return m.from === state.me && isOpen(m); }).length;
   }
-  function msgHtml(m) {
-    var st = String(m.status || 'Waiting');
-    var orig = m.re ? inboxRow(m.re) : null, pend = /^(pending|needs jy)$/i.test(st);
-    return '<div class="msg"><div class="mh"><span><b>' + esc(m.from) + '</b> · ' + esc(m.time) + '</span><span class="pill ' + (STATUS_CLS[st.toLowerCase()] || 'bookable') + '">' + esc(st) + '</span></div>' +
-      (orig ? '<div class="mq">↪ Re ' + esc(orig.from) + ': ' + esc(snip(orig.text, 80)) + '</div>' : '') +
-      '<div class="mt">' + esc(m.text) + '</div>' + (m.reply ? '<div class="mr">' + esc(m.reply) + '</div>' : '') +
-      (pend ? '<div class="mact"><button type="button" class="linkbtn" data-ibx-re="' + m.row + '">Reply</button></div>' : '') + '</div>';
+  /* My requests (task 11): what this phone sent (under its "Who are you?" name) and what happened to each.
+     Inbox Status -> shown as: Waiting, Voting, Pending ("Question for you", with Reply), Done, Skipped ("Not done"). */
+  var REQ = {
+    waiting: ['Waiting', 'wait'], voting: ['Voting', 'vote'], pending: ['Question for you', 'ask'], 'needs jy': ['Question for you', 'ask'],
+    done: ['Done', 'done'], skipped: ['Not done', 'no'], 'not done': ['Not done', 'no']
+  };
+  function reqState(m) { return REQ[String(m.status || 'Waiting').trim().toLowerCase()] || ['Waiting', 'wait']; }
+  function isOpen(m) { var c = reqState(m)[1]; return c === 'wait' || c === 'vote' || c === 'ask'; }
+  // the scheduled runs are at 9am, 1pm and 5pm trip time (quiet 9pm to 9am)
+  function nextRun() {
+    var m = tokyoMinutes();
+    if (m < 0) return 'at the next run';
+    return m < 540 ? 'by about 9am' : m < 780 ? 'by about 1pm' : m < 1020 ? 'by about 5pm' : 'by about 9am tomorrow';
+  }
+  function reqHtml(m) {
+    var st = reqState(m), orig = m.re ? inboxRow(m.re) : null, res = '';
+    if (st[1] === 'wait') res = 'Will be applied ' + nextRun() + '.';
+    else if (st[1] === 'ask') res = m.reply || 'Your organiser has a question.';
+    else if (st[1] === 'no') res = m.reply || 'Not applied.';
+    else if (st[1] === 'done') res = m.reply || (m.done ? 'Applied ' + m.done : 'Applied');
+    else if (st[1] === 'vote') res = m.reply || 'The group is voting on this.';
+    return '<div class="req"><div class="req-h"><span>' + esc(m.time) + '</span><span class="st ' + st[1] + '">' + esc(st[0]) + '</span></div>' +
+      (orig ? '<div class="mq">↪ Re: ' + esc(snip(orig.text, 80)) + '</div>' : '') +
+      '<p>' + esc(m.text) + '</p>' + (res ? '<div class="req-r">' + esc(res) + '</div>' : '') +
+      (st[1] === 'ask' ? '<div class="mact"><button type="button" class="linkbtn" data-ibx-re="' + m.row + '">Reply</button></div>' : '') + '</div>';
   }
   function renderRequests() {
-    if (!CAN_RUN) return '<section class="section"><h3>Messages</h3><p class="hint">Messages work in the web app link only.</p></section>';
-    var h = '<p class="hint" style="margin:0">Everything sent to the trip, newest first. Requests are applied at 9am, 1pm and 5pm.</p>';
-    if (state.inbox === null) { loadInbox(); return h + '<section class="section"><p class="hint">Loading messages…</p></section>'; }
-    var list = state.inbox.slice().reverse();
-    h += '<section class="section"><h3>Messages</h3>' + (list.length ? '<div>' + list.map(msgHtml).join('') + '</div>' :
-      '<div class="empty-duck">' + DUCKS('pair', 28) + '<p class="hint">No messages yet. All quiet on the pond.</p></div>') + '</section>';
+    if (!CAN_RUN) return '<section class="section"><h3>My requests</h3><p class="hint">Requests work in the web app link only.</p></section>';
+    if (!meOk()) {
+      return '<section class="section"><h3>Who are you?</h3><p class="hint">Pick your name once. Your requests are the ones sent under it from this phone.</p><div class="who">' +
+        travellers().map(function (n) { return '<button type="button" class="btn" data-me="' + esc(n) + '">' + esc(n) + '</button>'; }).join('') + '</div></section>';
+    }
+    if (state.inbox === null) { loadInbox(); return '<section class="section"><p class="hint">Loading your requests…</p></section>'; }
+    var mine = state.inbox.filter(function (m) { return m.from === state.me; }).reverse();
+    var open = mine.filter(isOpen), done = mine.filter(function (m) { return !isOpen(m); });
+    var f = state.reqFilter || 'all', list = f === 'open' ? open : f === 'done' ? done : mine;
+    var h = '<div class="seg" role="group" aria-label="Show">' + [['all', 'All', mine.length], ['open', 'Open', open.length], ['done', 'Finished', done.length]].map(function (o) {
+      return '<button type="button" data-req="' + o[0] + '" aria-pressed="' + (f === o[0]) + '">' + o[1] + ' · ' + o[2] + '</button>';
+    }).join('') + '</div>';
+    h += '<section class="section">' + (list.length ? '<div>' + list.map(reqHtml).join('') + '</div>' :
+      '<div class="empty-duck">' + DUCKS('pair', 28) + '<p class="hint">' + (mine.length ? 'Nothing here.' : 'Nothing sent yet. Type below to suggest a change or log an expense.') + '</p></div>') + '</section>';
+    h += '<p class="hint" style="margin:0;font-size:13px;color:var(--ink-3)">Requests are applied at 9am, 1pm and 5pm. Everyone\'s finished changes are on <a href="#group" data-go="group">Group</a>.</p>';
     return h;
   }
   var inboxLoading = false;
@@ -1515,7 +1553,7 @@ function startApp(DATA) {
     hb.setAttribute('aria-current', state.tab === 'requests' ? 'page' : 'false');
     document.getElementById('chat-badge').textContent = n ? String(n) : '';
     document.getElementById('chat-badge').hidden = !n;
-    hb.setAttribute('aria-label', 'Messages' + (n ? ', ' + n + ' still open' : ''));
+    hb.setAttribute('aria-label', 'My requests' + (n ? ', ' + n + ' still open' : ''));
     var ta = document.getElementById('chat-text');
     ta.placeholder = state.tab === 'expenses' ? 'Log an expense…' : 'Suggest a change to the trip…';
     if (ta.value !== (state.draft || '') && document.activeElement !== ta) ta.value = state.draft || '';
@@ -1554,7 +1592,7 @@ function startApp(DATA) {
       h += '<section class="section"><h3>Recent changes</h3>' + (state.inbox === null ? '<p class="hint">Loading…</p>' : done.length ? '<div>' + done.map(function (m) {
         return '<div class="msg"><div class="mh"><span><b>' + esc(m.from) + '</b> · ' + esc(m.done || m.time) + '</span><span class="pill booked">Done</span></div><div class="mt">' + esc(snip(m.text, 140)) + '</div></div>';
       }).join('') + '</div>' : '<div class="empty-duck">' + DUCKS('pair', 28) + '<p class="hint">No changes yet. All quiet on the pond.</p></div>') +
-        '<button type="button" class="btn" data-go="requests" style="justify-content:center">See all messages</button></section>';
+        '<button type="button" class="btn" data-go="requests" style="justify-content:center">My requests</button></section>';
     }
     if (names.length) {
       h += '<section class="section"><h3>People</h3><div class="list">' + names.map(function (n) {
@@ -1575,10 +1613,10 @@ function startApp(DATA) {
   var TABS = ['group', 'bookings', 'plan', 'expenses', 'me'];
   function render() {
     var t = state.tab, n = travellers().length;
-    var eyebrows = { group: 'Group', bookings: 'Bookings', plan: 'Plan', expenses: 'Expenses', me: 'Me', requests: 'Messages' };
+    var eyebrows = { group: 'Group', bookings: 'Bookings', plan: 'Plan', expenses: 'Expenses', me: 'Me', requests: 'Only you see this list' };
     document.getElementById('eyebrow').textContent = eyebrows[t];
     document.getElementById('title').textContent = t === 'group' ? META.name + (n ? ' · ' + n + ' traveller' + (n === 1 ? '' : 's') : '') :
-      t === 'me' ? (meOk() ? state.me : 'Me') : t === 'requests' ? 'Messages' : tripTitle();
+      t === 'me' ? (meOk() ? state.me : 'Me') : t === 'requests' ? 'My requests' : tripTitle();
     TABS.forEach(function (x) {
       var a = document.getElementById('tab-' + x);
       if (x === t || (t === 'requests' && x === state.from)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
@@ -1637,6 +1675,8 @@ function startApp(DATA) {
     if (s) { state.settle = s.getAttribute('data-settle'); store(SK + 'settle', state.settle); render(); return; }
     var sb = e.target.closest('[data-shares]');
     if (sb) { state.shares = sb.getAttribute('data-shares'); store(SK + 'shares', state.shares); render(); return; }
+    var rq = e.target.closest('[data-req]');
+    if (rq) { state.reqFilter = rq.getAttribute('data-req'); render(); return; }
     if (e.target.closest('[data-chg-all]')) { state.chgAll = !state.chgAll; render(); return; }
     if (e.target.closest('[data-tx-all]')) { state.txAll = !state.txAll; render(); return; }
     var tb = e.target.closest('[data-theme-set]');
