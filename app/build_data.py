@@ -354,23 +354,62 @@ def parse_doc(doc):
     return {'title': doc.get('title', ''), 'intro': intro, 'days': days, 'backup_food': backup_food}
 
 
+# Optional booking lines on a flight, hotel or car row (upgrade task 5); same rules as KV_BOOK in Parser.js
+BOOK_RE = [
+    ('code', re.compile(r'^(?:booking\s+(?:code|ref(?:erence)?|no\.?|number)|confirmation\s+(?:code|no\.?|number)|ref(?:erence)?\s*(?:code|no\.?)?)\s*:\s*(.+)$', re.I)),
+    ('phone', re.compile(r'^(?:phone|tel(?:ephone)?)\s*:\s*(.+)$', re.I)),
+    ('address', re.compile(r'^(?:address\s*\(local\)|local\s+address)\s*:\s*(.+)$', re.I)),
+    ('checkin', re.compile(r'^online\s+check[\s-]?in\s*:\s*(.+)$', re.I)),
+]
+
+
+def is_book_line(t):
+    return any(rx.match(clean(t)) for _, rx in BOOK_RE)
+
+
+def book_lines(it):
+    out = {}
+    texts = [(i['label'] + ': ' if i['label'] else '') + i['value'] for i in it['info']] \
+        + [''.join(s['t'] for s in d['segs']) for d in it['details']]
+    for t in texts:
+        t = clean(t)
+        for k, rx in BOOK_RE:
+            m = rx.match(t)
+            if m and k not in out:
+                out[k] = m.group(1).strip()
+    return out or None
+
+
 def build_trip(plan):
     flights, hotels, car, todo = [], [], None, []
     for day in plan['days']:
         for it in day['items']:
             n = it['name']
             if it['kind'] == 'Flight':
-                flights.append({'date': day['label'], 'weekday': day['weekday'][:3], 'time': it['time'], 'name': n,
-                                'detail': ' '.join(''.join(s['t'] for s in d['segs']) for d in it['details'])})
+                fl = {'date': day['label'], 'weekday': day['weekday'][:3], 'time': it['time'], 'name': n,
+                      'detail': ' '.join(t for t in (''.join(s['t'] for s in d['segs']) for d in it['details']) if not is_book_line(t))}
+                fb = book_lines(it)
+                if fb:
+                    fl['book'] = fb
+                flights.append(fl)
             if n.lower().startswith('check-in to hotel'):
                 hn = next((''.join(s['t'] for s in d['segs']) for d in it['details'] if d.get('heading')), n)
                 extra = [i['value'] if not i['label'] else f"{i['label']}: {i['value']}" for i in it['info']]
-                hotels.append({'date': day['label'], 'weekday': day['weekday'][:3], 'name': hn, 'notes': extra})
+                ho = {'date': day['label'], 'weekday': day['weekday'][:3], 'name': hn, 'notes': extra}
+                hb = book_lines(it)
+                if hb:
+                    ho['book'] = hb
+                if it.get('maps'):
+                    ho['maps'] = it['maps']
+                hotels.append(ho)
             if n.lower().startswith('collect car'):
                 car = {'date': day['label'], 'weekday': day['weekday'][:3], 'time': it['time'],
                        'lines': [(i['label'] + ': ' if i['label'] else '') + i['value'] for i in it['info']]
                        + [''.join(s['t'] for s in d['segs']) for d in it['details']],
                        'notes': [''.join(s['t'] for s in ln['segs']) for ln in it['notes']]}
+                cb = book_lines(it)
+                if cb:
+                    car['book'] = cb
             if n.lower().startswith('return car'):
                 if car is not None:
                     car['return'] = f"{day['label']} {it['time']}"

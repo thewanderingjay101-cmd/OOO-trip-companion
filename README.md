@@ -21,6 +21,7 @@ The Just Follow trip companion app (formerly OOO): one phone page for every trip
 | `app/beta.json` | The test backend's /exec link (`{"api": "..."}`); blank shows a "not connected yet" page at /beta/. |
 | `app/build_data.py`, `app/render_page.py` | Offline tools: turn saved snapshots of a trip's doc and sheet into data and render a page from them (for debugging the parser; they never touch live files). `build_data.py` holds the same parsing logic as `Parser.js`: keep them in sync. |
 | `tests/smoke_test.py` | Checks the generated files match a fresh build, every script parses, and the beta page keeps its device storage apart. |
+| `tests/parser_parity_test.py` | Runs `Parser.js` and `build_data.py` on a small made-up doc (built in the test) and checks they give the same plan and trip data, with and without the optional booking lines. |
 | `tests/backend_test.js` | Runs the backend in Node against in-memory fakes of Google's services (Trips sheet, Members sheet, sessions, error log, inbox naming). No network, no real files. |
 | `.github/workflows/backend.yml` | Runs both tests on every PR; updates the test backend on each PR; deploys the live backend when JY presses Run. |
 | `*.png` | Icons: `just-follow-180.png` (apple-touch-icon), `just-follow-512.png`; `apple-touch-icon.png` / `icon-512.png` are the old suitcase, kept for old pages. |
@@ -30,6 +31,7 @@ The Just Follow trip companion app (formerly OOO): one phone page for every trip
 ```
 python3 -I app/build_appscript.py   # after any change to app/template.html, app/beta.json or app/appscript/*.js
 python3 -I tests/smoke_test.py
+python3 -I tests/parser_parity_test.py
 node tests/backend_test.js
 ```
 
@@ -109,13 +111,29 @@ name=Kansai; start=2026-11-11; end=2026-11-20; doc=<doc id>; sheet=<sheet id>; p
 
 Five tabs in one row: **Group, Bookings, Plan (in the middle), Expenses, Me**. The open tab has a yellow pill behind its icon. Links: `#group`, `#bookings`, `#plan`, `#expenses`, `#me`, `#requests`; old links still work (`#trip` opens Bookings, `#inbox` opens Messages).
 - **Group** (replaces the top of the old Trip tab): the trip header "<Trip> · N travellers", the Overview (intro, days and nights, hotels, travellers), Recent changes (the last 5 inbox messages marked Done, with "See all messages") and People (the expense sheet's travellers, "(you)" beside this phone's name). Open votes go at the top in task 14; the red dot on the Group tab (`#group-dot`) is for them.
-- **Bookings**: the old Trip tab's Flights, Hotels and Car rental, unchanged. Task 5 turns it into Tonight, car, next flight and Still to book.
+- **Bookings**: four cards on top (task 5, see "Bookings tab"), then the old Trip tab's Flights, Hotels and Car rental under "All bookings".
 - **Plan** and **Expenses**: unchanged.
 - **Me**: "Who are you?" (this phone's name, used for messages), Other trips and "Open another trip with its PIN", Add to Home Screen, Night mode.
 - **Chat bar** (`#chatbar`): sits above the tab bar on every tab except Me, whenever the page can reach the backend. Typing and Send (or Enter) posts to the trip inbox with `postInbox`, exactly as the old Inbox form did. If this phone hasn't picked a name yet, a "Who are you?" sheet asks first and then sends. The bar is drawn once and only updated (`drawChat`), so a re-render never interrupts typing. Its height is kept in `--chat-h` so the page's last lines stay clear of it.
 - **Clock button** on the chat bar opens **Messages** (`#requests`): every inbox message, newest first, with its status and reply. Pending ones have Reply, which puts "Replying to …" above the chat bar. The red number is how many messages sent under this phone's name are still Waiting or Pending. Task 11 turns this into My requests.
 - The inbox is loaded once in the background after the trip opens (and again on pull-to-refresh), so the badge and Recent changes fill in without opening Messages.
 - Nothing on the backend changed for this: the same four calls, the same inbox sheet.
+
+## Bookings tab (upgrade task 5, 21 Nov 2026)
+
+Four cards at the top, worked out from the plan and today's date in the trip's time zone (`bookingCards` in template.html). Nothing to set up: they work for every trip, and get richer when the doc has the optional lines below.
+- **Tonight** (dark card): the hotel whose stay covers tonight, "Night N of M", check-in time (the "Check-in to hotel" row, or the hotel's own "Check-in:" line), the booking code, and Map, Call and Copy local address buttons. Before the trip it shows the first night instead. Map uses the row's Maps link, else a search for the local address or the hotel name.
+- **Car rental**: number of cars, then "Pick up Thu 12 Nov, 10am" before pick-up ("in N days"), "Picked up" with the return time and a Call button during the rental, "Returned" after. Uses the "Collect car" and "Return car" rows.
+- **Next flight** (or ferry): the next leg that hasn't left yet, with "today / tomorrow / in N days", times, booking code and the online check-in line. The last leg is called "Flight home".
+- **Still to book**: rows marked To book from today on; tapping one opens that day in Plan. "All set" with the ducklings when there are none.
+
+Optional lines in the itinerary doc, on the flight's Departure row, the "Check-in to hotel" row or the "Collect car" row, italic like the other info lines (plain also works):
+- `Booking code: KB-48213` (also "Booking ref", "Confirmation code/number", "Ref")
+- `Phone: +81 78 325 8111`
+- `Address (local): 神戸市中央区波止場町5-6`
+- `Online check-in: Thu 19 Nov 10:05`
+
+Parser.js reads them into a `book` object on that flight, hotel or car (`{code, phone, address, checkin}`, only the ones present; no `book` key when there are none, so older trips parse exactly as before). They are kept out of the flight number and out of the hotel and car notes in "All bookings". `build_data.py` does the same; `tests/parser_parity_test.py` checks both agree.
 
 ## What the screens show (UI polish, 13 Nov 2026)
 

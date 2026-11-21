@@ -408,6 +408,30 @@ body.has-chat main { padding-bottom: calc(var(--tabbar-h) + var(--chat-h) + env(
 .sheet-in { width: 100%; max-width: 560px; background: var(--surface); border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 10px; }
 .sheet-in h3 { margin: 0; font-family: var(--font-display); font-size: 20px; }
 .sheet-in .hint { margin: 0; font-size: 13px; color: var(--ink-3); }
+/* Bookings cards (task 5) */
+.subhead { margin: 8px 0 -4px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.bk { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.bk-k { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.bk-k .when { color: var(--amber); }
+.bk-k .pill { letter-spacing: 0; text-transform: none; }
+.bk-nm { font-family: var(--font-display); font-size: 19px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.bk-ln { font-size: 14px; color: var(--ink-2); overflow-wrap: anywhere; }
+.bk-ln.jp { font-family: 'Noto Sans JP', var(--font-body); }
+.code { display: inline-block; padding: 1px 7px; border-radius: 6px; background: var(--surface-2); color: var(--ink); font-weight: 700; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.bk-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.bk-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--accent); font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.bk.tonight { background: #1B2340; border-color: #1B2340; color: #FFFFFF; }
+.bk.tonight .bk-k { color: var(--duck); }
+.bk.tonight .bk-ln { color: #D8DCEB; }
+.bk.tonight .code { background: #46517F; color: #FFFFFF; }
+.bk.tonight .bk-btn { border-color: #46517F; color: #FFFFFF; }
+:root[data-theme="dark"] .bk.tonight { background: #232B4E; border-color: #5F6B9B; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bk.tonight { background: #232B4E; border-color: #5F6B9B; } }
+.bk-todo { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px 0; border-top: 1px solid var(--line); align-items: baseline; width: 100%; }
+.bk-todo:first-child { border-top: 0; padding-top: 2px; }
+.bk-todo .t { font-weight: 600; color: var(--persimmon); overflow-wrap: anywhere; }
+.bk-todo .r { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.bk .meta.ducks { align-self: flex-start; }
 /* people on Group */
 .person { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
 .person:first-child { border-top: 0; padding-top: 2px; }
@@ -635,7 +659,9 @@ function startApp(DATA) {
     pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
     route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
-    alert: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>'
+    alert: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+    phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+    copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>'
   };
   function icon(name, size) { var s = size || 16; return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + I[name] + '</svg>'; }
   var KIND = { Meal: 'meal', Activity: 'activity', Drive: 'drive', Hotel: 'hotel', Flight: 'flight', Ferry: 'ferry', Snack: 'snack', Shopping: 'shop' };
@@ -1128,7 +1154,7 @@ function startApp(DATA) {
       var inT = ci && ci.time, outT = co && co.time, notes = [];
       x.notes.forEach(function (t) {
         var m = /^check[\s-]?(in|out)(?:\s+time)?\s*:\s*(.+)$/i.exec(String(t).trim());
-        if (m && m[1].toLowerCase() === 'in') inT = m[2]; else if (m) outT = m[2]; else notes.push(t);
+        if (m && m[1].toLowerCase() === 'in') inT = m[2]; else if (m) outT = m[2]; else if (!BOOK_LINE.test(String(t).trim())) notes.push(t);
       });
       return '<div class="li"><span class="t">' + esc(x.name) + '</span><span class="r">' + (n ? n + (n === 1 ? ' night' : ' nights') : '') + '</span>' +
         '<span class="s">Check in ' + esc(x.weekday + ' ' + x.date) + (inT ? ' · ' + esc(inT) : '') + '<br>' +
@@ -1148,7 +1174,7 @@ function startApp(DATA) {
       var C = T.car, models = [], company = '', insurance = '', ptime = '', ploc = '', rest = [];
       (C.lines || []).forEach(function (l) {
         var t = String(l).trim(), m;
-        if (!t) return;
+        if (!t || BOOK_LINE.test(t)) return;
         if ((m = /^pick[\s-]?up\s+time\s*:\s*(.+)$/i.exec(t)) && !ptime) ptime = m[1];
         else if ((m = /^(?:pick[\s-]?up\s+)?location\s*:\s*(.+)$/i.exec(t)) && !ploc) ploc = m[1];
         else if (/insurance/i.test(t) && !insurance) insurance = t;
@@ -1165,9 +1191,9 @@ function startApp(DATA) {
         return a;
       }, []);
       // cars and insurance as small cards, like the Overview stats
-      var ins = insurance ? /^(.*?)\s*insurance\b\s*(.*)$/i.exec(insurance) : null;
-      var insKind = ins && ins[1] && ins[1].split(/\s+/).length <= 2 ? ins[1].charAt(0).toUpperCase() + ins[1].slice(1) : (insurance ? 'Yes' : '');
-      var insRest = ins ? (ins[1] && insKind !== 'Yes' ? ins[2] : insurance) : '';
+      var insM = insurance ? /^(.*?)\s*insurance\b\s*(.*)$/i.exec(insurance) : null;
+      var insKind = insM && insM[1] && insM[1].split(/\s+/).length <= 2 ? insM[1].charAt(0).toUpperCase() + insM[1].slice(1) : (insurance ? 'Yes' : '');
+      var insRest = insM ? (insM[1] && insKind !== 'Yes' ? insM[2] : insurance) : '';
       var cards = '';
       if (nCars || models.length) cards += '<div class="stat"><b>' + (nCars || models.length) + '</b><span>' + ((nCars || models.length) === 1 ? 'car' : 'cars') + '</span>' +
         models.map(function (x) { return '<span class="sm">' + esc(x.name) + '</span>'; }).join('') + '</div>';
@@ -1179,6 +1205,92 @@ function startApp(DATA) {
         '</div>' + (notes.length ? '<details class="more"><summary>Notes</summary><ul class="notes">' + notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></details>' : '') + '</section>';
     }
 
+    return bookingCards(T, ins, outs, hotelDates) + (h ? '<h2 class="subhead">All bookings</h2>' + h : '');
+  }
+
+  /* Bookings cards (task 5): tonight's hotel, the car, the next flight and what's still to book, worked out from
+     the plan and today's date in the trip's time zone. Optional doc lines feed them: "Booking code:", "Phone:",
+     "Address (local):" and "Online check-in:" (parsed into .book by Parser.js). */
+  var BOOK_LINE = /^(?:booking\s+(?:code|ref(?:erence)?|no\.?|number)|confirmation\s+(?:code|no\.?|number)|ref(?:erence)?\s*(?:code|no\.?)?|phone|tel(?:ephone)?|address\s*\(local\)|local\s+address|online\s+check[\s-]?in)\s*:/i;
+  function dateOf(label) { var d = days.filter(function (x) { return x.label === label; })[0]; return d ? d.date : null; }
+  function dayOf(iso) { return days.filter(function (x) { return x.date === iso; })[0] || null; }
+  function hm(t) { var m = /^(\d{1,2}):(\d{2})/.exec(String(t || '')); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+  function dayDiff(a, b) { return Math.round((new Date(b) - new Date(a)) / 864e5); }
+  function whenText(n) { return n <= 0 ? 'today' : n === 1 ? 'tomorrow' : 'in ' + n + ' days'; }
+  function refChip(code, dark) { return code ? ' · Ref <span class="code' + (dark ? ' on-dark' : '') + '">' + esc(code) + '</span>' : ''; }
+  function telHref(p) { var n = String(p || '').replace(/[^\d+]/g, ''); return n.length >= 6 ? 'tel:' + n : null; }
+  function bookingCards(T, ins, outs, hotelDates) {
+    var today = tokyoToday(), mins = tokyoMinutes(), h = '';
+    var first = days[0] && days[0].date, last = days.length ? days[days.length - 1].date : null;
+    if (!first) return '';
+    // Tonight: the hotel whose stay covers tonight (before the trip, the first night)
+    var k = -1;
+    (T.hotels || []).forEach(function (x, i) {
+      var s = hotelDates[i] && hotelDates[i].date, e = hotelDates[i + 1] ? hotelDates[i + 1].date : last;
+      if (s && s <= today && today < e) k = i;
+    });
+    var before = today < first;
+    if (k < 0 && before && (T.hotels || []).length) k = 0;
+    if (k > -1) {
+      var x = T.hotels[k], b = x.book || {}, ci = ins[k] || null, inT = ci && ci.time;
+      (x.notes || []).forEach(function (t) { var m = /^check[\s-]?in(?:\s+time)?\s*:\s*(.+)$/i.exec(String(t).trim()); if (m) inT = m[1]; });
+      var total = dayDiff(first, last), night = dayDiff(first, today) + 1;
+      var acts = [];
+      var map = safeUrl(x.maps) || searchUrl(b.address || x.name);
+      acts.push('<a class="bk-btn" href="' + esc(map) + '" target="_blank" rel="noopener">' + icon('pin', 15) + 'Map</a>');
+      if (telHref(b.phone)) acts.push('<a class="bk-btn" href="' + esc(telHref(b.phone)) + '">' + icon('phone', 15) + 'Call</a>');
+      if (b.address) acts.push('<button type="button" class="bk-btn" data-copy="' + esc(b.address) + '">' + icon('copy', 15) + 'Copy local address</button>');
+      h += '<section class="bk tonight"><div class="bk-k"><span>' + (before ? 'First night · ' + esc(x.weekday + ' ' + x.date) : 'Tonight') + '</span>' +
+        (!before && total > 0 ? '<span>Night ' + night + ' of ' + total + '</span>' : '') + '</div>' +
+        '<div class="bk-nm">' + esc(x.name) + '</div>' +
+        '<div class="bk-ln">' + (inT ? 'Check-in from ' + esc(inT) : 'Check-in ' + esc(x.weekday + ' ' + x.date)) + refChip(b.code, true) + '</div>' +
+        (b.address ? '<div class="bk-ln jp">' + esc(b.address) + '</div>' : '') +
+        '<div class="bk-acts">' + acts.join('') + '</div></section>';
+    }
+    // Car: before pick-up, picked up (return date), returned
+    var C = T.car;
+    if (C) {
+      var cb = C.book || {}, pd = dateOf(C.date), rm = /^(.*?)\s+(\d{1,2}:\d{2})/.exec(String(C['return'] || ''));
+      var rd = rm ? dateOf(rm[1]) : (C['return'] ? dateOf(String(C['return'])) : null);
+      var ptime = ''; (C.lines || []).forEach(function (l) { var m = /^pick[\s-]?up\s+time\s*:\s*(.+)$/i.exec(String(l).trim()); if (m && !ptime) ptime = m[1]; });
+      var picked = pd && (today > pd || (today === pd && hm(C.time) !== null && mins >= hm(C.time)));
+      var returned = rd && (today > rd || (today === rd && rm && mins >= hm(rm[2])));
+      var ncar = (C.lines || []).filter(function (l) { return /^([^:]+?)\s*[-–—]\s*((?:[$¥€£]|[A-Z]{3}\s?|S\$)\s?[\d,.]+)/.test(String(l).trim()); }).length;
+      var nm = (C.notes || []).concat(C.lines || []).join(' ').match(/(\d+)\s+cars?\b/i);
+      ncar = ncar || (nm ? +nm[1] : 0);
+      var rdDay = rd ? dayOf(rd) : null;
+      var retLine = C['return'] ? 'Return ' + (rdDay ? rdDay.weekday.slice(0, 3) + ' ' : '') + (rm ? rm[1] + ', ' + rm[2] : C['return']) : '';
+      var line = returned ? 'Returned ' + (rdDay ? rdDay.weekday.slice(0, 3) + ' ' : '') + (rm ? rm[1] : '') :
+        picked ? retLine : 'Pick up ' + C.weekday + ' ' + C.date + ((ptime || C.time) ? ', ' + (ptime || C.time) : '');
+      if (!returned || today <= last) h += '<section class="bk"><div class="bk-k"><span>Car rental</span>' +
+        (returned ? '<span class="pill walk_in">Returned</span>' : picked ? '<span class="pill booked">Picked up</span>' : pd ? '<span class="when">' + esc(whenText(dayDiff(today, pd))) + '</span>' : '') + '</div>' +
+        '<div class="bk-nm">' + (ncar ? ncar + (ncar === 1 ? ' car' : ' cars') : 'Car') + '</div>' +
+        '<div class="bk-ln">' + esc(line) + refChip(cb.code) + '</div>' +
+        (picked && !returned && telHref(cb.phone) ? '<div class="bk-acts"><a class="bk-btn" href="' + esc(telHref(cb.phone)) + '">' + icon('phone', 15) + 'Call</a></div>' : '') + '</section>';
+    }
+    // Next flight (or ferry) that hasn't left yet
+    var legs = flightLegs(T.flights || []);
+    var next = null;
+    legs.some(function (l) {
+      var f = l.single || l.dep, d = dateOf(f.date), t = hm(f.time);
+      if (d && (d > today || (d === today && (t === null || t > mins)))) { next = l; return true; }
+      return false;
+    });
+    if (next) {
+      var f = next.single || next.dep, fb = {}, nd = dateOf(f.date);
+      [next.single, next.dep, next.arr].forEach(function (x) { if (x && x.book) Object.keys(x.book).forEach(function (q) { if (!fb[q]) fb[q] = x.book[q]; }); });
+      var ferry = FERRY_RE.test([f.name, f.detail, next.arr && next.arr.name].join(' '));
+      var isHome = legs.indexOf(next) === legs.length - 1 && legs.length > 1;
+      h += '<section class="bk"><div class="bk-k"><span>' + (ferry ? (isHome ? 'Ferry back' : 'Next ferry') : (isHome ? 'Flight home' : 'Next flight')) + '</span><span class="when">' + esc(whenText(dayDiff(today, nd))) + '</span></div>' +
+        '<div class="bk-nm">' + (next.single ? esc(f.name) : esc(next.from) + ' → ' + esc(next.to)) + (next.code ? ' · ' + esc(next.code) : '') + '</div>' +
+        '<div class="bk-ln">' + esc(f.weekday + ' ' + f.date) + ' · ' + esc(f.time) + (next.arr ? ' → ' + esc(next.arr.time) : '') + refChip(fb.code) + '</div>' +
+        (fb.checkin ? '<div class="bk-ln">Online check-in: ' + esc(fb.checkin) + '</div>' : '') + '</section>';
+    }
+    // Still to book
+    var tb = (T.todo || []).filter(function (x) { return (x.items || []).indexOf('To book') > -1 && (dateOf(x.date) || '') >= today; });
+    h += '<section class="bk"><div class="bk-k"><span>Still to book' + (tb.length ? ' · ' + tb.length : '') + '</span></div>' + (tb.length ? '<div class="list">' + tb.map(function (x) {
+      return '<button type="button" class="bk-todo" data-goto="' + esc(dateOf(x.date) || '') + '"><span class="t">' + esc(x.name) + '</span><span class="r">' + esc(x.weekday + ' ' + x.date) + (x.time ? ' · ' + esc(x.time) : '') + '</span></button>';
+    }).join('') + '</div>' : '<span class="meta ducks">' + DUCKS('kids', 14) + 'All set</span>') + '</section>';
     return h;
   }
 
@@ -1492,6 +1604,13 @@ function startApp(DATA) {
     if (e.target.closest('[data-tx-all]')) { state.txAll = !state.txAll; render(); return; }
     var tb = e.target.closest('[data-theme-set]');
     if (tb) { if (window.__setTheme) window.__setTheme(tb.getAttribute('data-theme-set')); render(); return; }
+    var cp = e.target.closest('[data-copy]');
+    if (cp) {
+      var txt = cp.getAttribute('data-copy'), lab = cp.lastChild;
+      var done = function () { var was = lab.textContent; lab.textContent = 'Copied'; setTimeout(function () { lab.textContent = was; }, 1600); };
+      try { navigator.clipboard.writeText(txt).then(done, function () {}); } catch (err) {}
+      return;
+    }
     var cb = e.target.closest('[data-cur]');
     if (cb) { state.cur = cb.getAttribute('data-cur'); store(SK + 'cur', state.cur); render(); return; }
   });

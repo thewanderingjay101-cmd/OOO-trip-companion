@@ -38,6 +38,8 @@ jobs:
         run: python3 -I tests/smoke_test.py
       - name: Backend test (in-memory fakes, no real files)
         run: node tests/backend_test.js
+      - name: Parser parity (Parser.js and build_data.py agree on a made-up doc)
+        run: python3 -I tests/parser_parity_test.py
 
   # Each pull request from this repo updates the TEST backend (never the live one), so /beta/ runs the PR's code.
   test-backend:
