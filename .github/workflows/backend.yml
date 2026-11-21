@@ -1,0 +1,98 @@
+# Tests every change, keeps the TEST Apps Script backend in step with each pull request, and deploys the
+# LIVE backend only when JY presses "Run workflow" (Actions > Backend > Run workflow).
+# Setup (once): see README "Deploying from GitHub". Until the secrets below exist, only the tests run.
+#   secret   CLASPRC_JSON        contents of ~/.clasprc.json after `npx @google/clasp@2.4.2 login` (JY's Google sign-in)
+#   variable TEST_SCRIPT_ID      script id of the "Just Follow test" Apps Script project
+#   variable TEST_DEPLOYMENT_ID  its web app deployment id (the AKfy... part of the test /exec link)
+#   variable LIVE_SCRIPT_ID      script id of the live Apps Script project
+#   variable LIVE_DEPLOYMENT_ID  its web app deployment id (the AKfy... part of the live /exec link)
+name: Backend
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      note:
+        description: 'What this live deploy ships (shown as the version description)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Smoke test (build matches, scripts parse, beta storage kept apart)
+        run: python3 -I tests/smoke_test.py
+      - name: Backend test (in-memory fakes, no real files)
+        run: node tests/backend_test.js
+
+  # Each pull request from this repo updates the TEST backend (never the live one), so /beta/ runs the PR's code.
+  test-backend:
+    needs: test
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && vars.TEST_SCRIPT_ID != ''
+    runs-on: ubuntu-latest
+    concurrency:
+      group: test-backend
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Sign in clasp
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: printf '%s' "$CLASPRC_JSON" > ~/.clasprc.json
+      - name: Push and deploy to the test project
+        working-directory: app/appscript
+        env:
+          SCRIPT_ID: ${{ vars.TEST_SCRIPT_ID }}
+          DEPLOYMENT_ID: ${{ vars.TEST_DEPLOYMENT_ID }}
+          DESC: PR ${{ github.event.pull_request.number }} ${{ github.event.pull_request.head.sha }}
+        run: |
+          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > .clasp.json
+          npx -y @google/clasp@2.4.2 push --force
+          npx -y @google/clasp@2.4.2 deploy --deploymentId "$DEPLOYMENT_ID" --description "${DESC:0:90}"
+
+  # Live deploy: only by hand, only from main. Same /exec link (a New version of the existing deployment).
+  live-backend:
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: live
+    concurrency:
+      group: live-backend
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Sign in clasp
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: printf '%s' "$CLASPRC_JSON" > ~/.clasprc.json
+      - name: Push and deploy to the live project
+        working-directory: app/appscript
+        env:
+          SCRIPT_ID: ${{ vars.LIVE_SCRIPT_ID }}
+          DEPLOYMENT_ID: ${{ vars.LIVE_DEPLOYMENT_ID }}
+          NOTE: ${{ inputs.note }}
+        run: |
+          test -n "$SCRIPT_ID" && test -n "$DEPLOYMENT_ID" || { echo "Set LIVE_SCRIPT_ID and LIVE_DEPLOYMENT_ID first"; exit 1; }
+          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > .clasp.json
+          npx -y @google/clasp@2.4.2 push --force
+          npx -y @google/clasp@2.4.2 deploy --deploymentId "$DEPLOYMENT_ID" --description "${NOTE:0:90}"

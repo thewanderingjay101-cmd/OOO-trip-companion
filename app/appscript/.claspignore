@@ -1,0 +1,5 @@
+# clasp pushes only the Apps Script files
+**/**
+!appsscript.json
+!*.js
+!Index.html
