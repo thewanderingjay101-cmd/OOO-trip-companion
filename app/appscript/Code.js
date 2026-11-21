@@ -402,6 +402,7 @@ function getTripData_(trip, fresh, fast) {
   data.mode = 'live';
   data.meta = { key: trip.key, name: trip.name, tz: trip.tz, place: trip.place,
     doc: trip.doc, sheet: trip.sheet, start: trip.start, end: trip.end };
+  addChanges_(trip, data);  // changes since this morning (Changes.js); never fails the read
   try {
     var gz = Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(JSON.stringify(data), 'application/json')).getBytes());
     if (gz.length < 95000) { cache.put(cacheKey, gz, CACHE_SECONDS); cache.put(lastKey, gz, LAST_GOOD_SECONDS); }

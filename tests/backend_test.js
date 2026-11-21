@@ -148,5 +148,37 @@ function tripsSheet(world, withOrganiser) {
   check(!w.props.MEMBERS_SHEET, 'warmUp never creates the Members sheet');
 }
 
+// 4. Changes since this morning (Changes.js): snapshot per trip per day in script property SNAP_<key>
+{
+  const w = makeWorld({});
+  const trip = { key: 't-one', tz: 'Asia/Tokyo' };
+  const item = (time, name, extra) => Object.assign({ time, name, kind: 'Activity', info: [], details: [], notes: [], backups: [] }, extra || {});
+  const mk = (items, exp) => ({ plan: { days: [{ date: '2026-11-16', items }] }, expenses: { recent: exp || [] } });
+  const morning = mk([item('12:30', 'Lunch at Seaside Cafe'), item('14:00', 'Hello Kitty Show Box'), item('18:00', 'Kobe Gyu Ramen'), item('20:00', 'Night walk')],
+    [{ date: '16 Nov 2026', desc: 'Petrol', amount: 6130, currency: 'JPY', paid_by: 'TMN' }]);
+  let c = w.ctx.applyChanges_(trip, JSON.parse(JSON.stringify(morning)), '2026-11-16', '07:05');
+  check(c.list.length === 0 && !!w.props['SNAP_t-one'], 'first read of the day keeps a snapshot and shows no changes');
+  check(w.props['SNAP_t-one'].length < 2000, 'snapshot is small (' + w.props['SNAP_t-one'].length + ' bytes)');
+  const later = mk([item('12:30', 'Lunch at Seaside Cafe', { notes: [{ segs: [{ t: 'Window seats' }] }] }), item('14:00', 'Strawberry farm'), item('19:00', 'Kobe Gyu Ramen'), item('21:00', 'Onsen')],
+    [{ date: '16 Nov 2026', desc: 'Petrol', amount: 6130, currency: 'JPY', paid_by: 'TMN' }, { date: '16 Nov 2026', desc: 'Lunch', amount: 3200, currency: 'JPY', paid_by: 'KA' }]);
+  c = w.ctx.applyChanges_(trip, JSON.parse(JSON.stringify(later)), '2026-11-16', '10:12');
+  const kinds = c.list.map(x => x.kind).sort().join(',');
+  check(kinds === 'added,edited,expense,moved,removed,replaced', 'moved, edited, replaced, added, removed and expense are found (' + kinds + ')');
+  const mv = c.list.find(x => x.kind === 'moved');
+  check(mv && mv.text === 'Kobe Gyu Ramen moved 18:00 → 19:00' && mv.at === '10:12', 'a move reads "moved 18:00 → 19:00" and is stamped 10:12');
+  check(c.list.find(x => x.kind === 'expense').text === 'JPY 3,200 Lunch logged, paid by KA', 'a new expense is listed');
+  c = w.ctx.applyChanges_(trip, JSON.parse(JSON.stringify(later)), '2026-11-16', '11:30');
+  check(c.list.every(x => x.at === '10:12'), 'a change keeps the time it was first seen');
+  c = w.ctx.applyChanges_(trip, JSON.parse(JSON.stringify(morning)), '2026-11-16', '12:00');
+  check(c.list.length === 0, 'undoing the edits clears the list');
+  c = w.ctx.applyChanges_(trip, JSON.parse(JSON.stringify(later)), '2026-11-17', '07:00');
+  check(c.list.length === 0, 'the next morning starts clean');
+  // a broken property never stops the trip from opening
+  w.props['SNAP_t-one'] = '{not json';
+  const d = JSON.parse(JSON.stringify(later));
+  w.ctx.addChanges_(trip, d);
+  check(d.changes && d.changes.list.length === 0, 'a damaged snapshot is replaced, the read still works');
+}
+
 console.log(fails ? '\n' + fails + ' failed' : '\nall passed');
 process.exit(fails ? 1 : 0);

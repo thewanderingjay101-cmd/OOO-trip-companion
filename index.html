@@ -393,6 +393,18 @@ body.has-chat main { padding-bottom: calc(var(--tabbar-h) + var(--chat-h) + env(
 .sheet-in { width: 100%; max-width: 560px; background: var(--surface); border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 10px; }
 .sheet-in h3 { margin: 0; font-family: var(--font-display); font-size: 20px; }
 .sheet-in .hint { margin: 0; font-size: 13px; color: var(--ink-3); }
+/* changes since this morning (task 13) */
+.chg-card { background: #1B2340; color: #FFFFFF; border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow); }
+:root[data-theme="dark"] .chg-card { background: #232B4E; border: 1px solid #5F6B9B; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chg-card { background: #232B4E; border: 1px solid #5F6B9B; } }
+.chg-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #F6B92B; }
+.chg-see { border: 0; background: transparent; color: #FFFFFF; font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; min-height: 32px; padding: 0 4px; cursor: pointer; }
+.chg-card ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.chg-card li { overflow-wrap: anywhere; }
+.chg-card small { display: block; font-size: 12px; color: #C9CEE0; }
+.chg-go { all: unset; display: block; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(255,255,255,.35); text-underline-offset: 3px; }
+.chg-k { color: var(--amber); }
+.chg-tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--amber); }
 /* Bookings cards (task 5) */
 .subhead { margin: 8px 0 -4px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .bk { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
@@ -959,8 +971,30 @@ function startApp(DATA) {
     return '<a class="btn pbtn" href="' + esc(p.url) + '" target="_blank" rel="noopener" aria-label="' + esc(lab) + '" title="' + esc(lab) + '"><span class="pk" aria-hidden="true">P</span></a>';
   }
 
+  /* Changes since this morning (task 13): the server compares each fresh read with the morning's snapshot
+     (Changes.js) and sends DATA.changes = {since, list: [{date, name, kind, text, at}]}. */
+  var planDay = null;
+  // a copy kept from yesterday never shows yesterday's changes as this morning's
+  function changesList() { return (DATA.changes && DATA.changes.since === tokyoToday() && DATA.changes.list) || []; }
+  function changeOf(date, name) {
+    return changesList().filter(function (c) { return c.date === date && c.name === name && c.kind !== 'removed'; })[0] || null;
+  }
+  function changesCard(d) {
+    var L = changesList();
+    if (!L.length) return '';
+    var shown = state.chgAll ? L : L.slice(0, 3);
+    return '<section class="chg-card" aria-label="Changes since this morning"><div class="chg-h"><span>' + L.length + (L.length === 1 ? ' change' : ' changes') + ' since this morning</span>' +
+      '<button type="button" class="chg-see" data-chg-all>' + (state.chgAll ? 'Less' : 'See') + '</button></div><ul>' +
+      shown.map(function (c) {
+        var dd = c.date ? days.filter(function (x) { return x.date === c.date; })[0] : null;
+        var txt = esc(c.text) + (state.chgAll ? '<small>' + (dd && dd.date !== d.date ? esc(shortDate(dd)) + ' · ' : '') + 'at ' + esc(c.at || '') + '</small>' : (dd && dd.date !== d.date ? ' <small>' + esc(shortDate(dd)) + '</small>' : ''));
+        return '<li>' + (dd && dd.date !== d.date ? '<button type="button" class="chg-go" data-goto="' + esc(dd.date) + '">' + txt + '</button>' : txt) + '</li>';
+      }).join('') + '</ul></section>';
+  }
+
   function cardHtml(it, isNow, vm) {
     var k = KIND[it.kind] || 'activity';
+    var chg = planDay ? changeOf(planDay, it.name) : null;
     var plain = !it.info.length && !(it.details || []).some(function (d) { return d.heading; }) && vm.notes.length <= 2 && !vm.parking;
     var route = safeUrl(vm.route);
     if ((it.kind === 'Drive' || it.kind === 'Flight' || it.kind === 'Ferry' || it.kind === 'Hotel') && plain) {
@@ -969,7 +1003,7 @@ function startApp(DATA) {
       vm.details.forEach(function (d) { lines.push(segsHtml(d.segs)); });
       vm.notes.forEach(function (n) { lines.push(segsHtml(n.segs)); });
       return '<div class="mini' + (isNow ? ' now' : '') + '">' + icon(k, 20) +
-        '<div class="mt"><div class="mn">' + esc(it.name) + '</div>' + lines.map(function (l) { return '<div class="ms">' + l + '</div>'; }).join('') + '</div>' +
+        '<div class="mt"><div class="mn">' + esc(it.name) + (chg ? ' <span class="chg-tag">Changed ' + esc(chg.at || '') + '</span>' : '') + '</div>' + lines.map(function (l) { return '<div class="ms">' + l + '</div>'; }).join('') + '</div>' +
         (route ? '<a class="ic" href="' + esc(route) + '" target="_blank" rel="noopener" aria-label="Route for ' + esc(it.name) + '">' + icon('route', 18) + '</a>' : '') +
         '</div>';
     }
@@ -979,7 +1013,7 @@ function startApp(DATA) {
     (it.tags || []).forEach(function (t) { pills.push('<span class="pill bookable">' + esc(t.charAt(0) + t.slice(1).toLowerCase()) + '</span>'); });
     if (it.status) pills.push('<span class="pill ' + it.status + '">' + STATUS[it.status] + '</span>');
     var h = '<article class="card' + (isNow ? ' now' : '') + '">' +
-      '<div class="cardtop"><span class="kind">' + icon(k, 14) + esc(label) + '</span><span class="pills">' + pills.join('') + '</span></div>';
+      '<div class="cardtop"><span class="kind">' + icon(k, 14) + esc(label) + (chg ? ' · <span class="chg-k">Changed ' + esc(chg.at || '') + '</span>' : '') + '</span><span class="pills">' + pills.join('') + '</span></div>';
     if (!(it.meal && it.name === it.meal)) h += '<div class="name">' + esc(it.name) + '</div>';
     h += factsHtml(vm.info);
     h += detailsHtml(vm.details);
@@ -1036,6 +1070,8 @@ function startApp(DATA) {
     else if (d.items.length) meta.push('<span class="meta ducks">' + DUCKS('kids', 13) + 'All set</span>');
     var h = '<section class="dayhead"><h2>' + esc(d.weekday) + ', ' + esc(d.label) + '</h2>' +
       '<div class="daymeta"><span class="meta">Day ' + (idx + 1) + ' of ' + days.length + '</span>' + meta.join('') + '</div></section>';
+    planDay = d.date;
+    h += changesCard(d);
     var vms = d.items.map(prepItem);
     // a drive row straight before a stop with first-choice parking routes to that parking
     vms.forEach(function (vm, k) {
@@ -1586,6 +1622,7 @@ function startApp(DATA) {
     if (s) { state.settle = s.getAttribute('data-settle'); store(SK + 'settle', state.settle); render(); return; }
     var sb = e.target.closest('[data-shares]');
     if (sb) { state.shares = sb.getAttribute('data-shares'); store(SK + 'shares', state.shares); render(); return; }
+    if (e.target.closest('[data-chg-all]')) { state.chgAll = !state.chgAll; render(); return; }
     if (e.target.closest('[data-tx-all]')) { state.txAll = !state.txAll; render(); return; }
     var tb = e.target.closest('[data-theme-set]');
     if (tb) { if (window.__setTheme) window.__setTheme(tb.getAttribute('data-theme-set')); render(); return; }

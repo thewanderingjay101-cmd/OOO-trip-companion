@@ -16,7 +16,7 @@ The Just Follow trip companion app (formerly OOO): one phone page for every trip
 | `index.html` | The live front end, served by GitHub Pages. **Generated**: never edit by hand. |
 | `beta/index.html` | The beta front end: same app, talks to the test backend. **Generated**. |
 | `app/template.html` | The page itself (markup, styles, scripts). Edit this, then rebuild. |
-| `app/appscript/` | The Apps Script backend: `Code.js`, `Members.js`, `Parser.js`, `appsscript.json`, and the generated `Index.html` (the Apps Script copy of the page). |
+| `app/appscript/` | The Apps Script backend: `Code.js`, `Members.js`, `Parser.js`, `Changes.js`, `appsscript.json`, and the generated `Index.html` (the Apps Script copy of the page). |
 | `app/build_appscript.py` | Builds `index.html`, `beta/index.html` and `app/appscript/Index.html` from the template (plus `project-import.json`, not committed). |
 | `app/beta.json` | The test backend's /exec link (`{"api": "..."}`); blank shows a "not connected yet" page at /beta/. |
 | `app/build_data.py`, `app/render_page.py` | Offline tools: turn saved snapshots of a trip's doc and sheet into data and render a page from them (for debugging the parser; they never touch live files). `build_data.py` holds the same parsing logic as `Parser.js`: keep them in sync. |
@@ -54,7 +54,7 @@ Automated (chosen by JY, 21 Nov 2026), with GitHub Actions and clasp (`.github/w
 - Live: Actions > Backend > Run workflow (branch `main`), with a short note. It pushes `app/appscript/` to the **live** project and deploys a New version of the existing deployment, so the /exec link never changes. It only runs from `main`, only when pressed.
 - One-time setup (JY): turn on the Apps Script API at https://script.google.com/home/usersettings; on a computer run `npx @google/clasp@2.4.2 login` and sign in as the account that owns the projects; add the contents of `~/.clasprc.json` as repo secret `CLASPRC_JSON`; add repo variables `TEST_SCRIPT_ID`, `TEST_DEPLOYMENT_ID`, `LIVE_SCRIPT_ID`, `LIVE_DEPLOYMENT_ID` (script id: Project Settings > IDs; deployment id: Deploy > Manage deployments, the `AKfy...` id). Treat the clasp token like a password: it can change any Apps Script project of that account. Optionally add an Environment called `live` with JY as required reviewer, so a live deploy also needs an approval click.
 - Before the first deploy of the repo's `Code.js` to live: add script property `TRIPS_SHEET` (the Trips sheet's id) to the live project. The repo keeps `TRIPS_SHEET_ID` blank because the repo is public; without the property the app shows "not set up" for everyone.
-- By hand (fallback): paste the changed files into the editor (`Code.js` -> Code.gs, `Members.js` -> Members.gs, `Parser.js` -> Parser.gs, `app/appscript/Index.html` -> Index, `appsscript.json`), Save, then Deploy > Manage deployments > pencil > Version: New version > Deploy (keeps the same link). Never "New deployment": that makes a new /exec link.
+- By hand (fallback): paste the changed files into the editor (`Code.js` -> Code.gs, `Members.js` -> Members.gs, `Parser.js` -> Parser.gs, `Changes.js` -> Changes.gs, `app/appscript/Index.html` -> Index, `appsscript.json`), Save, then Deploy > Manage deployments > pencil > Version: New version > Deploy (keeps the same link). Never "New deployment": that makes a new /exec link.
 - Ship backend first, then the page, when a change touches both.
 
 ## The app's own data sheet, sessions and error log (Members.js)
@@ -134,6 +134,15 @@ Optional lines in the itinerary doc, on the flight's Departure row, the "Check-i
 - `Online check-in: Thu 19 Nov 10:05`
 
 Parser.js reads them into a `book` object on that flight, hotel or car (`{code, phone, address, checkin}`, only the ones present; no `book` key when there are none, so older trips parse exactly as before). They are kept out of the flight number and out of the hotel and car notes in "All bookings". `build_data.py` does the same; `tests/parser_parity_test.py` checks both agree.
+
+## Changes since this morning (upgrade task 13, 21 Nov 2026)
+
+- `Changes.js`: the first fresh read of a trip each day (in the trip's time zone) keeps a **morning snapshot** of the parsed plan and expense rows. Every later fresh read compares with it and sends `changes: {since, list}` with the trip data. Each change is `{date, name, kind, text, at}`: kind `moved` ("Kobe Gyu Ramen moved 18:00 → 19:00"), `edited`, `added`, `removed`, `replaced` (a new stop at an old stop's time) or `expense` ("JPY 3,200 Lunch logged, paid by KA"). `at` is when the change was first seen (HH:mm, trip time).
+- The snapshot is one script property per trip, `SNAP_<key>`, holding only short fingerprints (stop names, times and 6-character hashes; about 3.5 KB for a 10-day trip). It is rewritten only when the day rolls over or a new change is first seen. A change that is undone drops off the list. If the expense list is too long to fit, only plan changes are tracked. A damaged property is simply replaced.
+- It runs inside `getTripData_` after the doc and sheet are read, so opening from the cache costs nothing extra, and any error there is logged and ignored (the trip still opens). Changes show within the 1-minute cache, or at once with pull-to-refresh.
+- "This morning" starts at the first read after midnight. With the `warmUp` trigger on (every 10 minutes during a trip), that is just after midnight, so changes made by the 9am run show up. Without it, it is the first time anyone opens the trip that day.
+- Page: a dark "N changes since this morning" card at the top of Plan (first 3, "See" lists all with the time and day; a change on another day opens that day). Changed cards say "Changed 10:12" next to their kind. A copy kept from an earlier day never shows that day's changes.
+- No new permissions and no new files: script properties only.
 
 ## What the screens show (UI polish, 13 Nov 2026)
 
