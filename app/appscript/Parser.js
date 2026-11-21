@@ -303,6 +303,26 @@ function parseDoc(doc) {
   return { title: doc.title || '', intro: intro, days: days, backup_food: backupFood };
 }
 
+// Optional booking lines on a flight, hotel or car row (upgrade task 5), italic or plain, e.g.
+// "Booking code: KB-48213", "Phone: +81 78 325 8111", "Address (local): 神戸市中央区…", "Online check-in: Thu 19 Nov 10:05".
+// Rows without them parse exactly as before (no "book" key).
+var KV_BOOK = [
+  ['code', /^(?:booking\s+(?:code|ref(?:erence)?|no\.?|number)|confirmation\s+(?:code|no\.?|number)|ref(?:erence)?\s*(?:code|no\.?)?)\s*:\s*(.+)$/i],
+  ['phone', /^(?:phone|tel(?:ephone)?)\s*:\s*(.+)$/i],
+  ['address', /^(?:address\s*\(local\)|local\s+address)\s*:\s*(.+)$/i],
+  ['checkin', /^online\s+check[\s-]?in\s*:\s*(.+)$/i]
+];
+function kv_bookLines(it) {
+  var out = {}, any = false;
+  it.info.map(function (i) { return (i.label ? i.label + ': ' : '') + i.value; })
+    .concat(it.details.map(function (d) { return kv_segsText(d.segs); }))
+    .forEach(function (t) {
+      t = kv_clean(t);
+      KV_BOOK.forEach(function (k) { var m = k[1].exec(t); if (m && !out[k[0]]) { out[k[0]] = m[1].trim(); any = true; } });
+    });
+  return any ? out : null;
+}
+
 function buildTrip(plan) {
   var flights = [], hotels = [], car = null, todo = [];
   plan.days.forEach(function (day) {
@@ -310,19 +330,25 @@ function buildTrip(plan) {
     day.items.forEach(function (it) {
       var n = it.name, nl = n.toLowerCase();
       if (it.kind === 'Flight') {
-        flights.push({ date: day.label, weekday: wd, time: it.time, name: n,
-          detail: it.details.map(function (d) { return kv_segsText(d.segs); }).join(' ') });
+        var fl = { date: day.label, weekday: wd, time: it.time, name: n,
+          detail: it.details.map(function (d) { return kv_segsText(d.segs); }).filter(function (t) { return !KV_BOOK.some(function (k) { return k[1].test(kv_clean(t)); }); }).join(' ') };
+        var fb = kv_bookLines(it); if (fb) fl.book = fb;
+        flights.push(fl);
       }
       if (nl.indexOf('check-in to hotel') === 0) {
         var head = it.details.filter(function (d) { return d.heading; })[0];
-        hotels.push({ date: day.label, weekday: wd, name: head ? kv_segsText(head.segs) : n,
-          notes: it.info.map(function (i) { return i.label ? i.label + ': ' + i.value : i.value; }) });
+        var ho = { date: day.label, weekday: wd, name: head ? kv_segsText(head.segs) : n,
+          notes: it.info.map(function (i) { return i.label ? i.label + ': ' + i.value : i.value; }) };
+        var hb = kv_bookLines(it); if (hb) ho.book = hb;
+        if (it.maps) ho.maps = it.maps;
+        hotels.push(ho);
       }
       if (nl.indexOf('collect car') === 0) {
         car = { date: day.label, weekday: wd, time: it.time,
           lines: it.info.map(function (i) { return (i.label ? i.label + ': ' : '') + i.value; })
             .concat(it.details.map(function (d) { return kv_segsText(d.segs); })),
           notes: it.notes.map(function (l) { return kv_segsText(l.segs); }) };
+        var cb = kv_bookLines(it); if (cb) car.book = cb;
       }
       if (nl.indexOf('return car') === 0 && car) car['return'] = day.label + ' ' + it.time;
       var hits = [];

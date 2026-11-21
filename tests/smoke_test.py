@@ -41,7 +41,7 @@ with tempfile.TemporaryDirectory() as tmp:
     for i, s in enumerate(scripts):
         node_check(s, 'index.html script %d parses' % (i + 1))
 
-    for f in ['Code.js', 'Members.js', 'Parser.js']:
+    for f in ['Code.js', 'Members.js', 'Parser.js', 'Changes.js', 'Votes.js']:
         src = read(root, 'app', 'appscript', f)
         node_check(src, f + ' parses')
     code = read(root, 'app', 'appscript', 'Code.js')

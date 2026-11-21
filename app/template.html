@@ -41,6 +41,7 @@
   --r: 20px;
   --r-btn: 14px;
   --tabbar-h: 64px;
+  --chat-h: 60px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -321,46 +322,133 @@ details.more[open] > summary::after { transform: rotate(-135deg); }
 .foot .trailrow i { width: 48px; height: 0; border-top: 4px dotted var(--trail); margin-bottom: 4px; }
 .splash .duck-row { display: block; margin: 18px auto 0; border-radius: 0; width: 115px; height: 40px; }
 
-/* tab bar */
+/* tab bar: five tabs in one row, Plan in the middle; the open tab gets a yellow pill behind its icon (task 4, 21 Nov 2026) */
 nav.tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 25;
   background: var(--surface); border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
 }
-nav.tabbar .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--tabbar-h); }
+nav.tabbar .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); height: var(--tabbar-h); }
 nav.tabbar a {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  text-decoration: none; color: var(--ink-3); font-size: 12px; font-weight: 600;
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  text-decoration: none; color: var(--ink-3); font-size: 11.5px; font-weight: 600; min-width: 0;
 }
-nav.tabbar a[aria-current="page"] { color: var(--accent); }
-nav.tabbar a.hero { justify-content: flex-end; padding-bottom: 8px; color: var(--accent); }
-nav.tabbar a.hero .bub {
-  width: 56px; height: 56px; margin-top: -26px; border-radius: 28px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--accent); color: var(--on-accent);
-  border: 4px solid var(--surface); box-shadow: 0 4px 12px rgba(24,33,58,.28);
-  transition: transform .15s;
-}
-nav.tabbar a.hero:not([aria-current="page"]) .bub { background: var(--accent-soft); color: var(--ink); box-shadow: 0 2px 6px rgba(24,33,58,.18); }
-nav.tabbar a.hero:not([aria-current="page"]) { color: var(--ink-3); }
-nav.tabbar a.hero:active .bub { transform: scale(.94); }
+nav.tabbar a svg { width: 48px; height: 28px; padding: 2px 12px; border-radius: 14px; box-sizing: border-box; transition: background .15s; }
+nav.tabbar a[aria-current="page"] { color: var(--ink); }
+nav.tabbar a[aria-current="page"] svg { background: var(--duck); color: var(--on-duck); }
+nav.tabbar .tdot { position: absolute; top: 8px; left: calc(50% + 12px); width: 8px; height: 8px; border-radius: 4px; background: var(--persimmon); }
+nav.tabbar .tdot[hidden] { display: none; }
 .top .wrap { position: relative; }
-.top .eyebrow, .top h1, .top .sub { padding-right: 56px; }
-.hbtn {
-  position: absolute; top: 10px; right: max(16px, env(safe-area-inset-right, 0px));
-  width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center;
-  color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); text-decoration: none;
+
+/* chat bar: just above the tab bar */
+body.has-chat main { padding-bottom: calc(var(--tabbar-h) + var(--chat-h) + env(safe-area-inset-bottom, 0px) + 24px); }
+.chatbar {
+  position: fixed; left: 0; right: 0; z-index: 24; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+  background: var(--bg); border-top: 1px solid var(--line);
+  padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
 }
-.hbtn[aria-current="page"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
-.hbtn[hidden] { display: none; }
-.ibx-form textarea {
-  font: inherit; font-size: 16px; min-height: 84px; resize: vertical; width: 100%;
-  padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+.chatbar[hidden], .chat-re[hidden], .chat-toast[hidden], .badge[hidden] { display: none; }
+.chat-in { max-width: 560px; margin: 0 auto; padding: 8px 16px; display: flex; flex-direction: column; gap: 6px; }
+.chat-row { display: flex; align-items: flex-end; gap: 8px; }
+.chat-hist {
+  position: relative; flex: none; width: 44px; height: 44px; border-radius: 22px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2);
 }
-.ibx-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.ibx-row .btn { cursor: pointer; border: 0; min-height: 44px; padding: 0 18px; }
-.ibx-row .btn:disabled { opacity: .6; }
+.chat-hist[aria-current="page"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.chat-hist .badge {
+  position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--persimmon); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+}
+.chat-box { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 4px 4px 4px 14px; }
+.chat-box textarea {
+  flex: 1; min-width: 0; font: inherit; font-size: 16px; line-height: 1.35; border: 0; outline: 0; background: transparent; color: var(--ink);
+  resize: none; padding: 8px 0; max-height: 120px; height: 38px;
+}
+.chat-box textarea::placeholder { color: var(--ink-3); }
+.chat-go { flex: none; width: 36px; height: 36px; border-radius: 18px; border: 0; background: var(--duck); color: var(--on-duck); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.chat-go:disabled { opacity: .5; }
+.chat-re { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 6px 10px; }
+.chat-re span { overflow-wrap: anywhere; }
+.chat-toast { margin: 0; font-size: 13px; color: var(--ink-2); }
+/* bottom sheet ("Who are you?") */
+.sheet { position: fixed; inset: 0; z-index: 50; background: rgba(27,35,64,.45); display: flex; align-items: flex-end; justify-content: center; }
+.sheet[hidden] { display: none; }
+.sheet-in { width: 100%; max-width: 560px; background: var(--surface); border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 10px; }
+.sheet-in h3 { margin: 0; font-family: var(--font-display); font-size: 20px; }
+.sheet-in .hint { margin: 0; font-size: 13px; color: var(--ink-3); }
+/* changes since this morning (task 13) */
+.chg-card { background: #1B2340; color: #FFFFFF; border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow); }
+:root[data-theme="dark"] .chg-card { background: #232B4E; border: 1px solid #5F6B9B; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chg-card { background: #232B4E; border: 1px solid #5F6B9B; } }
+.chg-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #F6B92B; }
+.chg-see { border: 0; background: transparent; color: #FFFFFF; font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; min-height: 32px; padding: 0 4px; cursor: pointer; }
+.chg-card ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.chg-card li { overflow-wrap: anywhere; }
+.chg-card small { display: block; font-size: 12px; color: #C9CEE0; }
+.chg-go { all: unset; display: block; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(255,255,255,.35); text-underline-offset: 3px; }
+.chg-k { color: var(--amber); }
+.chg-tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--amber); }
+/* Bookings cards (task 5) */
+.subhead { margin: 8px 0 -4px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.bk { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.bk-k { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.bk-k .when { color: var(--amber); }
+.bk-k .pill { letter-spacing: 0; text-transform: none; }
+.bk-nm { font-family: var(--font-display); font-size: 19px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.bk-ln { font-size: 14px; color: var(--ink-2); overflow-wrap: anywhere; }
+.bk-ln.jp { font-family: 'Noto Sans JP', var(--font-body); }
+.code { display: inline-block; padding: 1px 7px; border-radius: 6px; background: var(--surface-2); color: var(--ink); font-weight: 700; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.bk-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.bk-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--accent); font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.bk.tonight { background: #1B2340; border-color: #1B2340; color: #FFFFFF; }
+.bk.tonight .bk-k { color: var(--duck); }
+.bk.tonight .bk-ln { color: #D8DCEB; }
+.bk.tonight .code { background: #46517F; color: #FFFFFF; }
+.bk.tonight .bk-btn { border-color: #46517F; color: #FFFFFF; }
+:root[data-theme="dark"] .bk.tonight { background: #232B4E; border-color: #5F6B9B; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bk.tonight { background: #232B4E; border-color: #5F6B9B; } }
+.bk-todo { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px 0; border-top: 1px solid var(--line); align-items: baseline; width: 100%; }
+.bk-todo:first-child { border-top: 0; padding-top: 2px; }
+.bk-todo .t { font-weight: 600; color: var(--persimmon); overflow-wrap: anywhere; }
+.bk-todo .r { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.bk .meta.ducks { align-self: flex-start; }
+/* My requests (task 11) */
+.req { border-top: 1px solid var(--line); padding: 10px 0 4px; display: flex; flex-direction: column; gap: 4px; }
+.req:first-child { border-top: 0; padding-top: 0; }
+.req-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); }
+.req p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.req-r { font-size: 13px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 7px 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.st { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.st.wait { background: var(--amber-soft); color: var(--amber); }
+.st.vote { background: var(--accent-soft); color: var(--ink); }
+.st.ask { background: var(--persimmon-soft); color: var(--persimmon); }
+.st.done { background: var(--good-soft); color: var(--good); }
+.st.no { background: var(--surface-2); color: var(--ink-2); }
+/* group votes (task 14) */
+.chat-ask[hidden] { display: none; }
+.chat-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; }
+.chip { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); min-height: 32px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.vote { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.vote-k { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.vote-k .when { color: var(--amber); }
+.vote-q { margin: 0; font-size: 16px; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
+.vote-by { font-size: 13px; color: var(--ink-3); }
+.vopt { all: unset; box-sizing: border-box; position: relative; display: flex; justify-content: space-between; gap: 8px; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); overflow: hidden; cursor: pointer; font-size: 15px; font-weight: 600; }
+.vopt[disabled] { cursor: default; }
+.vopt .bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent-soft); z-index: 0; }
+.vopt > span { position: relative; z-index: 1; }
+.vopt[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.vote-who { font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
+.vote-res { font-size: 14px; font-weight: 600; }
+/* people on Group */
+.person { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.person:first-child { border-top: 0; padding-top: 2px; }
+.person .av { flex: none; width: 36px; height: 36px; border-radius: 18px; background: var(--chip); color: var(--on-chip); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.person .pn { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.person .pn .hint { font-weight: 500; font-size: 13px; color: var(--ink-3); }
+.who .btn[aria-pressed="true"] { border-color: var(--accent); }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; font-size: 13px; }
 .who { display: flex; flex-wrap: wrap; gap: 8px; }
 .who .btn { cursor: pointer; min-height: 44px; padding: 0 16px; }
@@ -372,8 +460,6 @@ nav.tabbar a.hero:active .bub { transform: scale(.94); }
 .msg .mq { font-size: 12px; color: var(--ink-3); border-left: 2px solid var(--line); padding-left: 8px; overflow-wrap: anywhere; }
 .msg .mact { display: flex; justify-content: flex-end; }
 .msg .mact .linkbtn { min-height: 32px; }
-.ibx-re { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
-.ibx-re span { overflow-wrap: anywhere; }
 .msg .mr { font-size: 13px; color: var(--ink-2); background: var(--surface-2); border-radius: 10px; padding: 8px 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ptr {
   position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 40;
@@ -393,7 +479,6 @@ nav.tabbar a.hero:active .bub { transform: scale(.94); }
 
 <header class="top">
   <div class="wrap">
-    <a href="#inbox" id="tab-inbox" class="hbtn" aria-label="Inbox" title="Inbox" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg></a>
     <div class="eyebrow" id="eyebrow">Trip</div>
     <h1 id="title">Plan</h1>
     <div class="sub" id="sub"></div>
@@ -406,20 +491,29 @@ nav.tabbar a.hero:active .bub { transform: scale(.94); }
 </main>
 <div class="ptr" id="ptr" role="status" aria-live="polite"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg><span id="ptr-t">Pull to refresh</span></div>
 
+<!-- chat bar: sends to the trip inbox from every tab but Me; the clock button opens Messages -->
+<form class="chatbar" id="chatbar" hidden autocomplete="off">
+  <div class="chat-in">
+    <div class="chat-re" id="chat-re" hidden></div>
+    <p class="chat-toast" id="chat-toast" role="status" aria-live="polite" hidden></p>
+    <div class="chat-ask" id="chat-ask" hidden></div>
+    <div class="chat-row">
+      <button type="button" class="chat-hist" id="chat-hist" aria-label="Messages"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span class="badge" id="chat-badge" hidden></span></button>
+      <label for="chat-text" class="sr">Message to the trip</label>
+      <div class="chat-box"><textarea id="chat-text" rows="1" maxlength="1500" placeholder="Suggest a change to the trip…" enterkeyhint="send"></textarea>
+      <button type="submit" class="chat-go" id="chat-go" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    </div>
+  </div>
+</form>
+<div class="sheet" id="sheet" hidden></div>
+
 <nav class="tabbar" aria-label="Sections">
   <div class="in">
-    <a href="#trip" id="tab-trip">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18v12H3z"/><path d="M8 7V5h8v2"/><path d="M3 12h18"/></svg>
-      Trip
-    </a>
-    <a href="#plan" id="tab-plan" class="hero">
-      <span class="bub"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></span>
-      Plan
-    </a>
-    <a href="#expenses" id="tab-expenses">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
-      Expenses
-    </a>
+    <a href="#group" id="tab-group"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M17 14.5c2.4 0 4.1 1.6 4.6 4.5"/></svg><span>Group</span><span class="tdot" id="group-dot" hidden></span></a>
+    <a href="#bookings" id="tab-bookings"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" stroke-dasharray="2 2"/></svg><span>Bookings</span></a>
+    <a href="#plan" id="tab-plan"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Plan</span></a>
+    <a href="#expenses" id="tab-expenses"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg><span>Expenses</span></a>
+    <a href="#me" id="tab-me"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4.2 4-6.5 8-6.5s7.2 2.3 8 6.5"/></svg><span>Me</span></a>
   </div>
 </nav>
 
@@ -487,7 +581,6 @@ function startApp(DATA) {
   if (window.__tripApp) { window.__tripApp.update(DATA); return; }
   document.getElementById('days').hidden = false;
   document.querySelector('nav.tabbar').hidden = false;
-  document.getElementById('tab-inbox').hidden = false;
   var META = DATA.meta || { key: 'trip', name: 'Trip', tz: 'Asia/Singapore', place: '' };
   var TZ = META.tz || 'Asia/Singapore';
   var PLACE_TIME = (META.place ? META.place : 'local') + ' time';
@@ -504,7 +597,7 @@ function startApp(DATA) {
   function tripTitle() { return META.name + (days.length ? ' · ' + rangeText(days[0].date, days[days.length - 1].date) : ''); }
   document.getElementById('sub').textContent = '';
   var view = document.getElementById('view');
-  var state = { tab: 'plan', day: null, settle: 'groups', inbox: null, draft: '', me: null, sending: false, inboxMsg: '', replyTo: 0 };
+  var state = { tab: 'plan', from: 'plan', day: null, settle: 'groups', inbox: null, draft: '', me: null, sending: false, toast: '', replyTo: 0, votes: null, ask: false, askClose: 'tonight' };
 
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 
@@ -577,7 +670,9 @@ function startApp(DATA) {
     pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
     route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
-    alert: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>'
+    alert: '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+    phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+    copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>'
   };
   function icon(name, size) { var s = size || 16; return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + I[name] + '</svg>'; }
   var KIND = { Meal: 'meal', Activity: 'activity', Drive: 'drive', Hotel: 'hotel', Flight: 'flight', Ferry: 'ferry', Snack: 'snack', Shopping: 'shop' };
@@ -890,8 +985,30 @@ function startApp(DATA) {
     return '<a class="btn pbtn" href="' + esc(p.url) + '" target="_blank" rel="noopener" aria-label="' + esc(lab) + '" title="' + esc(lab) + '"><span class="pk" aria-hidden="true">P</span></a>';
   }
 
+  /* Changes since this morning (task 13): the server compares each fresh read with the morning's snapshot
+     (Changes.js) and sends DATA.changes = {since, list: [{date, name, kind, text, at}]}. */
+  var planDay = null;
+  // a copy kept from yesterday never shows yesterday's changes as this morning's
+  function changesList() { return (DATA.changes && DATA.changes.since === tokyoToday() && DATA.changes.list) || []; }
+  function changeOf(date, name) {
+    return changesList().filter(function (c) { return c.date === date && c.name === name && c.kind !== 'removed'; })[0] || null;
+  }
+  function changesCard(d) {
+    var L = changesList();
+    if (!L.length) return '';
+    var shown = state.chgAll ? L : L.slice(0, 3);
+    return '<section class="chg-card" aria-label="Changes since this morning"><div class="chg-h"><span>' + L.length + (L.length === 1 ? ' change' : ' changes') + ' since this morning</span>' +
+      '<button type="button" class="chg-see" data-chg-all>' + (state.chgAll ? 'Less' : 'See') + '</button></div><ul>' +
+      shown.map(function (c) {
+        var dd = c.date ? days.filter(function (x) { return x.date === c.date; })[0] : null;
+        var txt = esc(c.text) + (state.chgAll ? '<small>' + (dd && dd.date !== d.date ? esc(shortDate(dd)) + ' · ' : '') + 'at ' + esc(c.at || '') + '</small>' : (dd && dd.date !== d.date ? ' <small>' + esc(shortDate(dd)) + '</small>' : ''));
+        return '<li>' + (dd && dd.date !== d.date ? '<button type="button" class="chg-go" data-goto="' + esc(dd.date) + '">' + txt + '</button>' : txt) + '</li>';
+      }).join('') + '</ul></section>';
+  }
+
   function cardHtml(it, isNow, vm) {
     var k = KIND[it.kind] || 'activity';
+    var chg = planDay ? changeOf(planDay, it.name) : null;
     var plain = !it.info.length && !(it.details || []).some(function (d) { return d.heading; }) && vm.notes.length <= 2 && !vm.parking;
     var route = safeUrl(vm.route);
     if ((it.kind === 'Drive' || it.kind === 'Flight' || it.kind === 'Ferry' || it.kind === 'Hotel') && plain) {
@@ -900,7 +1017,7 @@ function startApp(DATA) {
       vm.details.forEach(function (d) { lines.push(segsHtml(d.segs)); });
       vm.notes.forEach(function (n) { lines.push(segsHtml(n.segs)); });
       return '<div class="mini' + (isNow ? ' now' : '') + '">' + icon(k, 20) +
-        '<div class="mt"><div class="mn">' + esc(it.name) + '</div>' + lines.map(function (l) { return '<div class="ms">' + l + '</div>'; }).join('') + '</div>' +
+        '<div class="mt"><div class="mn">' + esc(it.name) + (chg ? ' <span class="chg-tag">Changed ' + esc(chg.at || '') + '</span>' : '') + '</div>' + lines.map(function (l) { return '<div class="ms">' + l + '</div>'; }).join('') + '</div>' +
         (route ? '<a class="ic" href="' + esc(route) + '" target="_blank" rel="noopener" aria-label="Route for ' + esc(it.name) + '">' + icon('route', 18) + '</a>' : '') +
         '</div>';
     }
@@ -910,7 +1027,7 @@ function startApp(DATA) {
     (it.tags || []).forEach(function (t) { pills.push('<span class="pill bookable">' + esc(t.charAt(0) + t.slice(1).toLowerCase()) + '</span>'); });
     if (it.status) pills.push('<span class="pill ' + it.status + '">' + STATUS[it.status] + '</span>');
     var h = '<article class="card' + (isNow ? ' now' : '') + '">' +
-      '<div class="cardtop"><span class="kind">' + icon(k, 14) + esc(label) + '</span><span class="pills">' + pills.join('') + '</span></div>';
+      '<div class="cardtop"><span class="kind">' + icon(k, 14) + esc(label) + (chg ? ' · <span class="chg-k">Changed ' + esc(chg.at || '') + '</span>' : '') + '</span><span class="pills">' + pills.join('') + '</span></div>';
     if (!(it.meal && it.name === it.meal)) h += '<div class="name">' + esc(it.name) + '</div>';
     h += factsHtml(vm.info);
     h += detailsHtml(vm.details);
@@ -967,6 +1084,8 @@ function startApp(DATA) {
     else if (d.items.length) meta.push('<span class="meta ducks">' + DUCKS('kids', 13) + 'All set</span>');
     var h = '<section class="dayhead"><h2>' + esc(d.weekday) + ', ' + esc(d.label) + '</h2>' +
       '<div class="daymeta"><span class="meta">Day ' + (idx + 1) + ' of ' + days.length + '</span>' + meta.join('') + '</div></section>';
+    planDay = d.date;
+    h += changesCard(d);
     var vms = d.items.map(prepItem);
     // a drive row straight before a stop with first-choice parking routes to that parking
     vms.forEach(function (vm, k) {
@@ -1023,12 +1142,12 @@ function startApp(DATA) {
       '<div class="stat"><b>' + T.hotels.length + '</b><span>' + (T.hotels.length === 1 ? 'hotel' : 'hotels') + '</span></div>' +
       '<div class="stat"><b>' + (who.length || '–') + '</b><span>travellers</span></div>' +
       '</div>';
-    if (who.length) h += '<div class="who-row" style="--n:' + Math.min(who.length, 6) + '">' + who.map(function (w) { return '<span class="meta">' + esc(w) + '</span>'; }).join('') + '</div>';
     h += '</section>';
     return h;
   }
-  function renderTrip() {
-    var T = DATA.trip, h = overviewHtml(T);
+  /* ---------- Bookings: flights, hotels and the car (task 5 adds Tonight, check-in and Still to book) ---------- */
+  function renderBookings() {
+    var T = DATA.trip, h = '';
     var legs = flightLegs(T.flights);
     legs.forEach(function (l) {
       var fs = l.single ? [l.single] : [l.dep, l.arr];
@@ -1070,7 +1189,7 @@ function startApp(DATA) {
       var inT = ci && ci.time, outT = co && co.time, notes = [];
       x.notes.forEach(function (t) {
         var m = /^check[\s-]?(in|out)(?:\s+time)?\s*:\s*(.+)$/i.exec(String(t).trim());
-        if (m && m[1].toLowerCase() === 'in') inT = m[2]; else if (m) outT = m[2]; else notes.push(t);
+        if (m && m[1].toLowerCase() === 'in') inT = m[2]; else if (m) outT = m[2]; else if (!BOOK_LINE.test(String(t).trim())) notes.push(t);
       });
       return '<div class="li"><span class="t">' + esc(x.name) + '</span><span class="r">' + (n ? n + (n === 1 ? ' night' : ' nights') : '') + '</span>' +
         '<span class="s">Check in ' + esc(x.weekday + ' ' + x.date) + (inT ? ' · ' + esc(inT) : '') + '<br>' +
@@ -1090,7 +1209,7 @@ function startApp(DATA) {
       var C = T.car, models = [], company = '', insurance = '', ptime = '', ploc = '', rest = [];
       (C.lines || []).forEach(function (l) {
         var t = String(l).trim(), m;
-        if (!t) return;
+        if (!t || BOOK_LINE.test(t)) return;
         if ((m = /^pick[\s-]?up\s+time\s*:\s*(.+)$/i.exec(t)) && !ptime) ptime = m[1];
         else if ((m = /^(?:pick[\s-]?up\s+)?location\s*:\s*(.+)$/i.exec(t)) && !ploc) ploc = m[1];
         else if (/insurance/i.test(t) && !insurance) insurance = t;
@@ -1107,9 +1226,9 @@ function startApp(DATA) {
         return a;
       }, []);
       // cars and insurance as small cards, like the Overview stats
-      var ins = insurance ? /^(.*?)\s*insurance\b\s*(.*)$/i.exec(insurance) : null;
-      var insKind = ins && ins[1] && ins[1].split(/\s+/).length <= 2 ? ins[1].charAt(0).toUpperCase() + ins[1].slice(1) : (insurance ? 'Yes' : '');
-      var insRest = ins ? (ins[1] && insKind !== 'Yes' ? ins[2] : insurance) : '';
+      var insM = insurance ? /^(.*?)\s*insurance\b\s*(.*)$/i.exec(insurance) : null;
+      var insKind = insM && insM[1] && insM[1].split(/\s+/).length <= 2 ? insM[1].charAt(0).toUpperCase() + insM[1].slice(1) : (insurance ? 'Yes' : '');
+      var insRest = insM ? (insM[1] && insKind !== 'Yes' ? insM[2] : insurance) : '';
       var cards = '';
       if (nCars || models.length) cards += '<div class="stat"><b>' + (nCars || models.length) + '</b><span>' + ((nCars || models.length) === 1 ? 'car' : 'cars') + '</span>' +
         models.map(function (x) { return '<span class="sm">' + esc(x.name) + '</span>'; }).join('') + '</div>';
@@ -1121,6 +1240,103 @@ function startApp(DATA) {
         '</div>' + (notes.length ? '<details class="more"><summary>Notes</summary><ul class="notes">' + notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></details>' : '') + '</section>';
     }
 
+    return bookingCards(T, ins, outs, hotelDates) + (h ? '<h2 class="subhead">All bookings</h2>' + h : '');
+  }
+
+  /* Bookings cards (task 5): tonight's hotel, the car, the next flight and what's still to book, worked out from
+     the plan and today's date in the trip's time zone. Optional doc lines feed them: "Booking code:", "Phone:",
+     "Address (local):" and "Online check-in:" (parsed into .book by Parser.js). */
+  var BOOK_LINE = /^(?:booking\s+(?:code|ref(?:erence)?|no\.?|number)|confirmation\s+(?:code|no\.?|number)|ref(?:erence)?\s*(?:code|no\.?)?|phone|tel(?:ephone)?|address\s*\(local\)|local\s+address|online\s+check[\s-]?in)\s*:/i;
+  function dateOf(label) { var d = days.filter(function (x) { return x.label === label; })[0]; return d ? d.date : null; }
+  function dayOf(iso) { return days.filter(function (x) { return x.date === iso; })[0] || null; }
+  function hm(t) { var m = /^(\d{1,2}):(\d{2})/.exec(String(t || '')); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+  function dayDiff(a, b) { return Math.round((new Date(b) - new Date(a)) / 864e5); }
+  function whenText(n) { return n <= 0 ? 'today' : n === 1 ? 'tomorrow' : 'in ' + n + ' days'; }
+  function refChip(code, dark) { return code ? ' · Ref <span class="code' + (dark ? ' on-dark' : '') + '">' + esc(code) + '</span>' : ''; }
+  function telHref(p) { var n = String(p || '').replace(/[^\d+]/g, ''); return n.length >= 6 ? 'tel:' + n : null; }
+  function bookingCards(T, ins, outs, hotelDates) {
+    var today = tokyoToday(), mins = tokyoMinutes(), h = '';
+    var first = days[0] && days[0].date, last = days.length ? days[days.length - 1].date : null;
+    if (!first) return '';
+    // Tonight: the hotel whose stay covers tonight (before the trip, the first night)
+    var k = -1;
+    (T.hotels || []).forEach(function (x, i) {
+      var s = hotelDates[i] && hotelDates[i].date, e = hotelDates[i + 1] ? hotelDates[i + 1].date : last;
+      if (s && s <= today && today < e) k = i;
+    });
+    var before = today < first;
+    if (k < 0 && before && (T.hotels || []).length) k = 0;
+    if (k > -1) {
+      var x = T.hotels[k], b = x.book || {}, ci = ins[k] || null, inT = ci && ci.time;
+      (x.notes || []).forEach(function (t) { var m = /^check[\s-]?in(?:\s+time)?\s*:\s*(.+)$/i.exec(String(t).trim()); if (m) inT = m[1]; });
+      var total = dayDiff(first, last), night = dayDiff(first, today) + 1;
+      var acts = [];
+      var map = safeUrl(x.maps) || searchUrl(b.address || x.name);
+      acts.push('<a class="bk-btn" href="' + esc(map) + '" target="_blank" rel="noopener">' + icon('pin', 15) + 'Map</a>');
+      if (telHref(b.phone)) acts.push('<a class="bk-btn" href="' + esc(telHref(b.phone)) + '">' + icon('phone', 15) + 'Call</a>');
+      if (b.address) acts.push('<button type="button" class="bk-btn" data-copy="' + esc(b.address) + '">' + icon('copy', 15) + 'Copy local address</button>');
+      h += '<section class="bk tonight"><div class="bk-k"><span>' + (before ? 'First night · ' + esc(x.weekday + ' ' + x.date) : 'Tonight') + '</span>' +
+        (!before && total > 0 ? '<span>Night ' + night + ' of ' + total + '</span>' : '') + '</div>' +
+        '<div class="bk-nm">' + esc(x.name) + '</div>' +
+        '<div class="bk-ln">' + (inT ? 'Check-in from ' + esc(inT) : 'Check-in ' + esc(x.weekday + ' ' + x.date)) + refChip(b.code, true) + '</div>' +
+        (b.address ? '<div class="bk-ln jp">' + esc(b.address) + '</div>' : '') +
+        '<div class="bk-acts">' + acts.join('') + '</div></section>';
+    }
+    // Car: before pick-up, picked up (return date), returned
+    var C = T.car;
+    if (C) {
+      var cb = C.book || {}, pd = dateOf(C.date), rm = /^(.*?)\s+(\d{1,2}:\d{2})/.exec(String(C['return'] || ''));
+      var rd = rm ? dateOf(rm[1]) : (C['return'] ? dateOf(String(C['return'])) : null);
+      var ptime = ''; (C.lines || []).forEach(function (l) { var m = /^pick[\s-]?up\s+time\s*:\s*(.+)$/i.exec(String(l).trim()); if (m && !ptime) ptime = m[1]; });
+      var picked = pd && (today > pd || (today === pd && hm(C.time) !== null && mins >= hm(C.time)));
+      var returned = rd && (today > rd || (today === rd && rm && mins >= hm(rm[2])));
+      var ncar = (C.lines || []).filter(function (l) { return /^([^:]+?)\s*[-–—]\s*((?:[$¥€£]|[A-Z]{3}\s?|S\$)\s?[\d,.]+)/.test(String(l).trim()); }).length;
+      var nm = (C.notes || []).concat(C.lines || []).join(' ').match(/(\d+)\s+cars?\b/i);
+      ncar = ncar || (nm ? +nm[1] : 0);
+      var rdDay = rd ? dayOf(rd) : null;
+      var retLine = C['return'] ? 'Return ' + (rdDay ? rdDay.weekday.slice(0, 3) + ' ' : '') + (rm ? rm[1] + ', ' + rm[2] : C['return']) : '';
+      var line = returned ? 'Returned ' + (rdDay ? rdDay.weekday.slice(0, 3) + ' ' : '') + (rm ? rm[1] : '') :
+        picked ? retLine : 'Pick up ' + C.weekday + ' ' + C.date + ((ptime || C.time) ? ', ' + (ptime || C.time) : '');
+      if (!returned || today <= last) h += '<section class="bk"><div class="bk-k"><span>Car rental</span>' +
+        (returned ? '<span class="pill walk_in">Returned</span>' : picked ? '<span class="pill booked">Picked up</span>' : pd ? '<span class="when">' + esc(whenText(dayDiff(today, pd))) + '</span>' : '') + '</div>' +
+        '<div class="bk-nm">' + (ncar ? ncar + (ncar === 1 ? ' car' : ' cars') : 'Car') + '</div>' +
+        '<div class="bk-ln">' + esc(line) + refChip(cb.code) + '</div>' +
+        (picked && !returned && telHref(cb.phone) ? '<div class="bk-acts"><a class="bk-btn" href="' + esc(telHref(cb.phone)) + '">' + icon('phone', 15) + 'Call</a></div>' : '') + '</section>';
+    }
+    // Next flight (or ferry) that hasn't left yet
+    var legs = flightLegs(T.flights || []);
+    var next = null;
+    legs.some(function (l) {
+      var f = l.single || l.dep, d = dateOf(f.date), t = hm(f.time);
+      if (d && (d > today || (d === today && (t === null || t > mins)))) { next = l; return true; }
+      return false;
+    });
+    if (next) {
+      var f = next.single || next.dep, fb = {}, nd = dateOf(f.date);
+      [next.single, next.dep, next.arr].forEach(function (x) { if (x && x.book) Object.keys(x.book).forEach(function (q) { if (!fb[q]) fb[q] = x.book[q]; }); });
+      var ferry = FERRY_RE.test([f.name, f.detail, next.arr && next.arr.name].join(' '));
+      var isHome = legs.indexOf(next) === legs.length - 1 && legs.length > 1;
+      h += '<section class="bk"><div class="bk-k"><span>' + (ferry ? (isHome ? 'Ferry back' : 'Next ferry') : (isHome ? 'Flight home' : 'Next flight')) + '</span><span class="when">' + esc(whenText(dayDiff(today, nd))) + '</span></div>' +
+        '<div class="bk-nm">' + (next.single ? esc(f.name) : esc(next.from) + ' → ' + esc(next.to)) + (next.code ? ' · ' + esc(next.code) : '') + '</div>' +
+        '<div class="bk-ln">' + esc(f.weekday + ' ' + f.date) + ' · ' + esc(f.time) + (next.arr ? ' → ' + esc(next.arr.time) : '') + refChip(fb.code) + '</div>' +
+        (fb.checkin ? '<div class="bk-ln">Online check-in: ' + esc(fb.checkin) + '</div>' : '') + '</section>';
+    }
+    // Still to book
+    var tb = (T.todo || []).filter(function (x) { return (x.items || []).indexOf('To book') > -1 && (dateOf(x.date) || '') >= today; });
+    h += '<section class="bk"><div class="bk-k"><span>Still to book' + (tb.length ? ' · ' + tb.length : '') + '</span></div>' + (tb.length ? '<div class="list">' + tb.map(function (x) {
+      return '<button type="button" class="bk-todo" data-goto="' + esc(dateOf(x.date) || '') + '"><span class="t">' + esc(x.name) + '</span><span class="r">' + esc(x.weekday + ' ' + x.date) + (x.time ? ' · ' + esc(x.time) : '') + '</span></button>';
+    }).join('') + '</div>' : '<span class="meta ducks">' + DUCKS('kids', 14) + 'All set</span>') + '</section>';
+    return h;
+  }
+
+  /* ---------- Me: who you are on this phone, your trips, Home Screen and Night mode ---------- */
+  function renderMe() {
+    var h = '', names = travellers();
+    // the name is picked once per phone and then locked (the trip PIN is shared, so it is the only "who" there is until email sign-in)
+    h += '<section class="section"><h3>Who are you?</h3>' + (meOk() ?
+      '<p class="hint">This phone is <b>' + esc(state.me) + '</b>. Requests and votes from it are sent under that name. It is set once per phone and can\'t be changed here.</p>' :
+      '<p class="hint">Pick your name. It is set once on this phone and can\'t be changed afterwards.</p>' +
+      '<div class="who">' + names.map(function (n) { return '<button type="button" class="btn" data-me="' + esc(n) + '">' + esc(n) + '</button>'; }).join('') + '</div>') + '</section>';
     var B = DATA.boot;
     if (B && B.url) {
       var ksq = B.ks ? '&ks=' + encodeURIComponent(B.ks) : '';
@@ -1225,37 +1441,67 @@ function startApp(DATA) {
     return h;
   }
 
-  /* ---------- inbox: chat-style requests that Claude applies on a schedule ---------- */
+  /* ---------- inbox: chat-style requests that Claude applies on a schedule ----------
+     The chat bar (above the tab bar on every tab but Me) sends to the trip inbox under the name picked in
+     "Who are you?" on this phone. The clock button opens the messages list. */
   var CAN_RUN = canCallServer();
   function travellers() { return ((DATA.expenses && DATA.expenses.by_person) || []).map(function (p) { return p.name; }).filter(Boolean); }
-  var STATUS_CLS = { done: 'booked', pending: 'to_book', 'needs jy': 'to_book', waiting: 'bookable', skipped: 'walk_in' };
   function snip(t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
   function inboxRow(r) { return (state.inbox || []).filter(function (m) { return m.row === r; })[0]; }
-  function renderInbox() {
-    if (!CAN_RUN) return '<section class="section"><h3>Inbox</h3><p class="hint">The inbox works in the web app link only.</p></section>';
-    var names = travellers();
-    if (!state.me || names.indexOf(state.me) < 0) {
-      return '<section class="section"><h3>Who are you?</h3><p class="hint">Pick your name once. Your messages are sent under it.</p><div class="who">' +
-        names.map(function (n) { return '<button type="button" class="btn" data-me="' + esc(n) + '">' + esc(n) + '</button>'; }).join('') + '</div></section>';
+  function meOk() { return !!state.me && travellers().indexOf(state.me) > -1; }
+  // still open messages sent from this phone's name: the number on the clock button
+  function openCount() {
+    if (!state.inbox || !meOk()) return 0;
+    return state.inbox.filter(function (m) { return m.from === state.me && isOpen(m); }).length;
+  }
+  /* My requests (task 11): what this phone sent (under its "Who are you?" name) and what happened to each.
+     Inbox Status -> shown as: Waiting, Voting, Pending ("Question for you", with Reply), Done, Skipped ("Not done"). */
+  var REQ = {
+    waiting: ['Waiting', 'wait'], voting: ['Voting', 'vote'], pending: ['Question for you', 'ask'], 'needs jy': ['Question for you', 'ask'],
+    done: ['Done', 'done'], skipped: ['Not done', 'no'], 'not done': ['Not done', 'no']
+  };
+  function reqState(m) { return REQ[String(m.status || 'Waiting').trim().toLowerCase()] || ['Waiting', 'wait']; }
+  function isOpen(m) { var c = reqState(m)[1]; return c === 'wait' || c === 'vote' || c === 'ask'; }
+  // the scheduled runs are at 9am, 1pm and 5pm trip time (quiet 9pm to 9am)
+  function nextRun() {
+    var m = tokyoMinutes();
+    if (m < 0) return 'at the next run';
+    return m < 540 ? 'by about 9am' : m < 780 ? 'by about 1pm' : m < 1020 ? 'by about 5pm' : 'by about 9am tomorrow';
+  }
+  function reqHtml(m) {
+    var st = reqState(m), tv = voteForRow(m.row);
+    if (tv && tv.status === 'Tie' && st[1] === 'ask') st = ['Tied vote', 'vote'];  // the organiser decides; nothing for the sender to answer
+    var orig = m.re ? inboxRow(m.re) : null, res = '';
+    if (st[1] === 'wait') res = 'Will be applied ' + nextRun() + '.';
+    else if (st[1] === 'ask') res = m.reply || 'Your organiser has a question.';
+    else if (st[1] === 'no') res = m.reply || 'Not applied.';
+    else if (st[1] === 'done') res = m.reply || (m.done ? 'Applied ' + m.done : 'Applied');
+    else if (st[1] === 'vote' && tv && tv.status === 'Tie') res = 'The vote tied ' + tv.counts[0] + '–' + tv.counts[1] + '. The organiser decides.';
+    else if (st[1] === 'vote') {
+      var v = voteForRow(m.row);
+      res = v ? v.counts[0] + ' yes, ' + v.counts[1] + ' no so far. Voting closes ' + voteWhen(v.closes) + '.' : (m.reply || 'The group is voting on this.');
     }
-    var h = '<form class="section ibx-form" id="ibx-form"><h3>Send to the trip inbox</h3>' +
-      '<p class="hint">Type it like a chat. For example: "¥3,200 ramen dinner, paid by ' + esc(names[0] || 'me') + ', split everyone" or "Move Fri lunch to 1pm".</p>' +
-      (state.replyTo && inboxRow(state.replyTo) ? '<div class="ibx-re"><span>Replying to <b>' + esc(inboxRow(state.replyTo).from) + '</b>: ' + esc(snip(inboxRow(state.replyTo).reply || inboxRow(state.replyTo).text, 90)) + '</span><button type="button" class="linkbtn" data-ibx-cancel>cancel</button></div>' : '') +
-      '<label for="ibx-text" class="sr">Message</label><textarea id="ibx-text" maxlength="1500" placeholder="Expense, change or comment"></textarea>' +
-      '<div class="ibx-row"><span class="hint" style="margin:0">Sending as <b>' + esc(state.me) + '</b> · <button type="button" class="linkbtn" data-me-change>change</button></span>' +
-      '<button type="submit" class="btn primary" id="ibx-send"' + (state.sending ? ' disabled' : '') + '>' + (state.sending ? 'Sending…' : 'Send') + '</button></div>' +
-      '<p class="hint" id="ibx-msg" role="status" aria-live="polite">' + esc(state.inboxMsg || '') + '</p>' +
-      '<p class="hint" style="margin:0;font-size:12px"><i>Note: Requests are applied hourly</i></p></form>';
-    if (state.inbox === null) { loadInbox(); return h + '<section class="section"><p class="hint">Loading messages…</p></section>'; }
-    var list = state.inbox.slice().reverse();
-    h += '<section class="section"><h3>Messages</h3>' + (list.length ? '<div>' + list.map(function (m) {
-      var st = String(m.status || 'Waiting');
-      var orig = m.re ? inboxRow(m.re) : null, pend = st.toLowerCase() === 'pending';
-      return '<div class="msg"><div class="mh"><span><b>' + esc(m.from) + '</b> · ' + esc(m.time) + '</span><span class="pill ' + (STATUS_CLS[st.toLowerCase()] || 'bookable') + '">' + esc(st) + '</span></div>' +
-        (orig ? '<div class="mq">↪ Re ' + esc(orig.from) + ': ' + esc(snip(orig.text, 80)) + '</div>' : '') +
-        '<div class="mt">' + esc(m.text) + '</div>' + (m.reply ? '<div class="mr">' + esc(m.reply) + '</div>' : '') +
-        (pend ? '<div class="mact"><button type="button" class="linkbtn" data-ibx-re="' + m.row + '">Reply</button></div>' : '') + '</div>';
-    }).join('') + '</div>' : '<div class="empty-duck">' + DUCKS('pair', 28) + '<p class="hint">No messages yet. All quiet on the pond.</p></div>') + '</section>';
+    return '<div class="req"><div class="req-h"><span>' + esc(m.time) + '</span><span class="st ' + st[1] + '">' + esc(st[0]) + '</span></div>' +
+      (orig ? '<div class="mq">↪ Re: ' + esc(snip(orig.text, 80)) + '</div>' : '') +
+      '<p>' + esc(m.text) + '</p>' + (res ? '<div class="req-r">' + esc(res) + '</div>' : '') +
+      (st[1] === 'ask' ? '<div class="mact"><button type="button" class="linkbtn" data-ibx-re="' + m.row + '">Reply</button></div>' : '') + '</div>';
+  }
+  function renderRequests() {
+    if (!CAN_RUN) return '<section class="section"><h3>My requests</h3><p class="hint">Requests work in the web app link only.</p></section>';
+    if (!meOk()) {
+      return '<section class="section"><h3>Who are you?</h3><p class="hint">Pick your name. It is set once on this phone and can\'t be changed afterwards.</p><div class="who">' +
+        travellers().map(function (n) { return '<button type="button" class="btn" data-me="' + esc(n) + '">' + esc(n) + '</button>'; }).join('') + '</div></section>';
+    }
+    if (state.inbox === null) { loadInbox(); return '<section class="section"><p class="hint">Loading your requests…</p></section>'; }
+    var mine = state.inbox.filter(function (m) { return m.from === state.me; }).reverse();
+    var open = mine.filter(isOpen), done = mine.filter(function (m) { return !isOpen(m); });
+    var f = state.reqFilter || 'all', list = f === 'open' ? open : f === 'done' ? done : mine;
+    var h = '<div class="seg" role="group" aria-label="Show">' + [['all', 'All', mine.length], ['open', 'Open', open.length], ['done', 'Finished', done.length]].map(function (o) {
+      return '<button type="button" data-req="' + o[0] + '" aria-pressed="' + (f === o[0]) + '">' + o[1] + ' · ' + o[2] + '</button>';
+    }).join('') + '</div>';
+    h += '<section class="section">' + (list.length ? '<div>' + list.map(reqHtml).join('') + '</div>' :
+      '<div class="empty-duck">' + DUCKS('pair', 28) + '<p class="hint">' + (mine.length ? 'Nothing here.' : 'Nothing sent yet. Type below to suggest a change or log an expense.') + '</p></div>') + '</section>';
+    h += '<p class="hint" style="margin:0;font-size:13px;color:var(--ink-3)">Requests are applied at 9am, 1pm and 5pm. Everyone\'s finished changes are on <a href="#group" data-go="group">Group</a>.</p>';
     return h;
   }
   var inboxLoading = false;
@@ -1263,24 +1509,180 @@ function startApp(DATA) {
     if (inboxLoading || !CAN_RUN || !window.__tripCred) return;
     inboxLoading = true;
     callServer('getInbox', [window.__tripKey || META.key, window.__tripCred],
-      function (json) { inboxLoading = false; state.inbox = JSON.parse(json); if (state.tab === 'inbox') render(); },
-      function () { inboxLoading = false; state.inbox = state.inbox || []; state.inboxMsg = "Couldn't load messages. Pull down to try again."; if (state.tab === 'inbox') render(); });
+      function (json) { inboxLoading = false; state.inbox = JSON.parse(json); render(); },
+      function () { inboxLoading = false; state.inbox = state.inbox || []; if (state.tab === 'requests') { state.toast = "Couldn't load messages. Pull down to try again."; } render(); });
   }
-  document.addEventListener('input', function (e) { if (e.target.id === 'ibx-text') state.draft = e.target.value; });
-  document.addEventListener('submit', function (e) {
-    if (e.target.id !== 'ibx-form') return;
-    e.preventDefault();
+  // "Who are you?" sheet: shown when someone sends before picking their name on this phone
+  function sheetOpen(html) { var sh = document.getElementById('sheet'); sh.innerHTML = '<div class="sheet-in" role="dialog" aria-modal="true">' + html + '</div>'; sh.hidden = false; }
+  function sheetClose() { var sh = document.getElementById('sheet'); sh.hidden = true; sh.innerHTML = ''; }
+  function askWho() {
+    sheetOpen('<h3>Who are you?</h3><p class="hint">Pick your name. It is set once on this phone and can\'t be changed afterwards.</p><div class="who">' +
+      travellers().map(function (n) { return '<button type="button" class="btn" data-me="' + esc(n) + '" data-me-send="1">' + esc(n) + '</button>'; }).join('') +
+      '</div><button type="button" class="linkbtn" data-sheet-close style="align-self:flex-start">Cancel</button>');
+  }
+  function sendDraft() {
     var text = (state.draft || '').trim();
-    if (!text || state.sending) return;
-    state.sending = true; state.inboxMsg = ''; render();
+    if (!text || state.sending || !CAN_RUN) return;
+    if (!meOk()) { askWho(); return; }
+    state.sending = true; state.toast = ''; drawChat();
+    if (state.ask && !state.replyTo) {
+      callServer('startVote', [window.__tripKey || META.key, window.__tripCred, state.me, text, state.askClose],
+        function (json) {
+          var r = JSON.parse(json);
+          state.sending = false; state.draft = ''; state.ask = false; state.inbox = r.inbox;
+          state.toast = 'Vote started. Everyone can vote on Group. Most votes wins.';
+          var ta = document.getElementById('chat-text'); if (ta) { ta.value = ''; ta.style.height = ''; }
+          votesLoading = false; loadVotes(); render();
+        },
+        function (err) {
+          state.sending = false;
+          state.toast = /busy/.test(String(err && err.message || err)) ? 'Too many messages just now. Try again in a few minutes.' : "Couldn't start the vote. Check your connection and try again.";
+          drawChat();
+        });
+      return;
+    }
     callServer('postInbox', [window.__tripKey || META.key, window.__tripCred, state.me, text, state.replyTo || 0],
-      function (json) { state.sending = false; state.draft = ''; state.replyTo = 0; state.inbox = JSON.parse(json); state.inboxMsg = 'Got it. Logged. Quack. It’ll be applied within about an hour.'; render(); },
+      function (json) {
+        state.sending = false; state.draft = ''; state.replyTo = 0; state.inbox = JSON.parse(json);
+        state.toast = 'Got it. Logged. Quack. It’ll be applied at the next run (9am, 1pm or 5pm).';
+        var ta = document.getElementById('chat-text'); if (ta) { ta.value = ''; ta.style.height = ''; }
+        render();
+      },
       function (err) {
         state.sending = false;
-        state.inboxMsg = /busy/.test(String(err && err.message || err)) ? 'Too many messages just now. Try again in a few minutes.' : "Couldn't send. Check your connection and try again.";
-        render();
+        state.toast = /busy/.test(String(err && err.message || err)) ? 'Too many messages just now. Try again in a few minutes.' : "Couldn't send. Check your connection and try again.";
+        drawChat();
       });
+  }
+  // the chat bar is drawn once and only updated here, so typing is never interrupted by a re-render
+  function drawChat() {
+    var bar = document.getElementById('chatbar');
+    var show = CAN_RUN && state.tab !== 'me';
+    bar.hidden = !show; document.body.classList.toggle('has-chat', show);
+    if (!show) return;
+    var n = openCount(), hb = document.getElementById('chat-hist');
+    hb.setAttribute('aria-current', state.tab === 'requests' ? 'page' : 'false');
+    document.getElementById('chat-badge').textContent = n ? String(n) : '';
+    document.getElementById('chat-badge').hidden = !n;
+    hb.setAttribute('aria-label', 'My requests' + (n ? ', ' + n + ' still open' : ''));
+    var ta = document.getElementById('chat-text');
+    ta.placeholder = state.tab === 'expenses' ? 'Log an expense…' : 'Suggest a change to the trip…';
+    if (ta.value !== (state.draft || '') && document.activeElement !== ta) ta.value = state.draft || '';
+    var go = document.getElementById('chat-go'); go.disabled = !!state.sending;
+    drawAsk();
+    var re = state.replyTo && inboxRow(state.replyTo), rb = document.getElementById('chat-re');
+    rb.hidden = !re;
+    if (re) rb.innerHTML = '<span>Replying to <b>' + esc(re.from) + '</b>: ' + esc(snip(re.reply || re.text, 70)) + '</span><button type="button" class="linkbtn" data-ibx-cancel>cancel</button>';
+    var t = document.getElementById('chat-toast'); t.textContent = state.sending ? 'Sending…' : (state.toast || ''); t.hidden = !t.textContent;
+    // keep the page's last lines clear of the bar, however tall it is right now
+    document.body.style.setProperty('--chat-h', bar.offsetHeight + 'px');
+    clearTimeout(drawChat.tm);
+    if (state.toast && !state.sending) drawChat.tm = setTimeout(function () { state.toast = ''; drawChat(); }, 8000);
+  }
+  // "Ask the group first" (task 14): shown once there is a draft (not for expenses or replies)
+  var ASK_CLOSE = [['hour', 'In 1 hour'], ['tonight', 'Tonight 22:00'], ['tomorrow', 'Tomorrow 9am']];
+  function drawAsk() {
+    var el = document.getElementById('chat-ask');
+    var show = !!(state.draft || '').trim() && state.tab !== 'expenses' && !state.replyTo && !state.sending;
+    el.hidden = !show;
+    if (!show) { el.innerHTML = ''; return; }
+    el.innerHTML = '<button type="button" class="chip" data-ask aria-pressed="' + !!state.ask + '">' + (state.ask ? '✓ ' : '') + 'Ask the group first</button>' +
+      (state.ask ? '<span class="hint" style="margin:0">Closes</span>' + ASK_CLOSE.map(function (o) {
+        return '<button type="button" class="chip" data-ask-close="' + o[0] + '" aria-pressed="' + (state.askClose === o[0]) + '">' + o[1] + '</button>';
+      }).join('') : '');
+  }
+  document.addEventListener('input', function (e) {
+    if (e.target.id !== 'chat-text') return;
+    var had = !!(state.draft || '').trim();
+    state.draft = e.target.value;
+    if (state.toast) { state.toast = ''; drawChat(); }
+    else if (had !== !!state.draft.trim()) drawAsk();
+    e.target.style.height = ''; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+    document.body.style.setProperty('--chat-h', document.getElementById('chatbar').offsetHeight + 'px');
   });
+  // Enter sends (the keyboard shows "send"); Shift+Enter starts a new line
+  document.addEventListener('keydown', function (e) {
+    if (e.target.id === 'chat-text' && e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendDraft(); }
+  });
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'chatbar') return;
+    e.preventDefault(); sendDraft();
+  });
+
+  /* ---------- Group: the trip, open votes (task 14), recent changes and people ---------- */
+  var votesLoading = false;
+  function loadVotes() {
+    if (votesLoading || !CAN_RUN || !window.__tripCred) return;
+    votesLoading = true;
+    callServer('getVotes', [window.__tripKey || META.key, window.__tripCred],
+      function (json) { votesLoading = false; state.votes = JSON.parse(json).votes || []; render(); },
+      function () { votesLoading = false; state.votes = state.votes || []; });
+  }
+  function voteForRow(row) { return (state.votes || []).filter(function (v) { return v.row === row; })[0] || null; }
+  function voteWhen(iso) {
+    try {
+      var d = new Date(iso), f = function (o) { return new Intl.DateTimeFormat('en-GB', Object.assign({ timeZone: TZ }, o)).format(d); };
+      var ymd = { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' };
+      var day = new Intl.DateTimeFormat('en-GB', ymd).format(d), today = new Intl.DateTimeFormat('en-GB', ymd).format(new Date());
+      var hm = f({ hour: '2-digit', minute: '2-digit', hour12: false });
+      return day === today ? hm : f({ weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + hm;
+    } catch (e) { return String(iso || ''); }
+  }
+  function voteOpen(v) { return v.status === 'Open' && new Date(v.closes).getTime() > Date.now(); }
+  function myVote(v) { var m = (v.voters || []).filter(function (x) { return x.name === state.me; })[0]; return m ? m.choice : -1; }
+  function needsMyVote() { return meOk() && (state.votes || []).some(function (v) { return voteOpen(v) && v.by !== state.me && myVote(v) < 0; }); }
+  function voteHtml(v) {
+    var open = voteOpen(v), tie = v.status === 'Tie', mine = myVote(v), total = v.counts[0] + v.counts[1];
+    var k = open ? '<span>Group vote</span><span class="when">Closes ' + esc(voteWhen(v.closes)) + '</span>' :
+      tie ? '<span>Group vote · tied</span><span class="when">Organiser decides</span>' : '<span>Group vote · closed</span><span>' + esc(voteWhen(v.closes)) + '</span>';
+    var h = '<div class="vote"><div class="vote-k">' + k + '</div><p class="vote-q">' + esc(v.question) + '</p><div class="vote-by">Asked by ' + esc(v.by) + '</div>';
+    h += v.options.map(function (o, i) {
+      var pct = total ? Math.round(100 * v.counts[i] / total) : 0;
+      return '<button type="button" class="vopt" ' + (open ? 'data-vote="' + esc(v.id) + '" data-choice="' + i + '"' : 'disabled') + ' aria-pressed="' + (mine === i) + '">' +
+        '<i class="bar" style="width:' + pct + '%"></i><span>' + (mine === i ? '✓ ' : '') + esc(o) + '</span><span>' + v.counts[i] + '</span></button>';
+    }).join('');
+    var who = [0, 1].map(function (i) {
+      var n = (v.voters || []).filter(function (x) { return x.choice === i; }).map(function (x) { return x.name; });
+      return n.length ? (i ? 'No: ' : 'Yes: ') + n.join(', ') : '';
+    }).filter(Boolean).join(' · ');
+    if (who) h += '<div class="vote-who">' + esc(who) + '</div>';
+    if (open && !meOk()) h += '<p class="hint" style="margin:0">Pick your name in <a href="#me" data-go="me">Me</a> to vote.</p>';
+    if (tie) h += '<div class="vote-res">Tied ' + v.counts[0] + '–' + v.counts[1] + '. The organiser decides.</div>';
+    else if (!open) h += '<div class="vote-res">' + esc(v.result || 'Closed') + '</div>';
+    return h + '</div>';
+  }
+  function votesSection() {
+    if (!CAN_RUN) return '';
+    if (state.votes === null) { loadVotes(); return ''; }
+    var live = state.votes.filter(function (v) { return voteOpen(v) || v.status === 'Tie'; });
+    var past = state.votes.filter(function (v) { return !(voteOpen(v) || v.status === 'Tie'); }).slice(-3).reverse();
+    if (!live.length && !past.length) return '';
+    return '<section class="section"><h3>' + (live.length ? 'Open votes' : 'Recent votes') + '</h3>' + live.concat(past).map(voteHtml).join('') + '</section>';
+  }
+  function sendVote(fn, id, choice) {
+    if (!meOk()) { goTab('me'); return; }
+    callServer(fn, [window.__tripKey || META.key, window.__tripCred, id, state.me, choice],
+      function (json) { state.votes = JSON.parse(json).votes || []; render(); },
+      function (err) { state.toast = /closed/.test(String(err && err.message || err)) ? 'That vote has closed.' : "Couldn't save your vote. Try again."; votesLoading = false; loadVotes(); drawChat(); });
+  }
+  function renderGroup() {
+    var h = votesSection() + overviewHtml(DATA.trip), names = travellers();
+    if (CAN_RUN) {
+      if (state.inbox === null) loadInbox();
+      var done = (state.inbox || []).filter(function (m) { return /^done$/i.test(m.status || ''); }).slice(-5).reverse();
+      h += '<section class="section"><h3>Recent changes</h3>' + (state.inbox === null ? '<p class="hint">Loading…</p>' : done.length ? '<div>' + done.map(function (m) {
+        return '<div class="msg"><div class="mh"><span><b>' + esc(m.from) + '</b> · ' + esc(m.done || m.time) + '</span><span class="pill booked">Done</span></div><div class="mt">' + esc(snip(m.text, 140)) + '</div></div>';
+      }).join('') + '</div>' : '<div class="empty-duck">' + DUCKS('pair', 28) + '<p class="hint">No changes yet. All quiet on the pond.</p></div>') +
+        '<button type="button" class="btn" data-go="requests" style="justify-content:center">My requests</button></section>';
+    }
+    if (names.length) {
+      h += '<section class="section"><h3>People</h3><div class="list">' + names.map(function (n) {
+        var me = n === state.me;
+        return '<div class="person"><span class="av">' + esc(n.slice(0, 3)) + '</span><span class="pn">' + esc(n) + (me ? ' <span class="hint">(you)</span>' : '') + '</span></div>';
+      }).join('') + '</div>' + (meOk() ? '' : '<p class="hint">Tell us which one is you in <a href="#me" data-go="me">Me</a>.</p>') + '</section>';
+    }
+    return h;
+  }
 
   /* ---------- shell ---------- */
   function refreshedText() {
@@ -1289,23 +1691,31 @@ function startApp(DATA) {
       return (LIVE ? 'Loaded ' : 'Updated ') + new Intl.DateTimeFormat('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(d) + ' ' + PLACE_TIME;
     } catch (e) { return 'Updated ' + DATA.generated_at; }
   }
+  var TABS = ['group', 'bookings', 'plan', 'expenses', 'me'];
   function render() {
-    var titles = { plan: 'Plan', trip: 'Trip', expenses: 'Expenses', inbox: 'Inbox' };
-    document.getElementById('eyebrow').textContent = titles[state.tab];
-    document.getElementById('title').textContent = tripTitle();
-    ['plan', 'trip', 'expenses', 'inbox'].forEach(function (t) {
-      var a = document.getElementById('tab-' + t);
-      if (t === state.tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    var t = state.tab, n = travellers().length;
+    var eyebrows = { group: 'Group', bookings: 'Bookings', plan: 'Plan', expenses: 'Expenses', me: 'Me', requests: 'Only you see this list' };
+    document.getElementById('eyebrow').textContent = eyebrows[t];
+    document.getElementById('title').textContent = t === 'group' ? META.name + (n ? ' · ' + n + ' traveller' + (n === 1 ? '' : 's') : '') :
+      t === 'me' ? (meOk() ? state.me : 'Me') : t === 'requests' ? 'My requests' : tripTitle();
+    TABS.forEach(function (x) {
+      var a = document.getElementById('tab-' + x);
+      if (x === t || (t === 'requests' && x === state.from)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     renderDays();
-    if (state.tab === 'inbox') { view.innerHTML = renderInbox(); var ta = document.getElementById('ibx-text'); if (ta) ta.value = state.draft || ''; return; }
-    var body = state.tab === 'plan' ? renderPlan() : state.tab === 'trip' ? renderTrip() : renderExpenses();
+    var body = t === 'plan' ? renderPlan() : t === 'group' ? renderGroup() : t === 'bookings' ? renderBookings() :
+      t === 'me' ? renderMe() : t === 'requests' ? renderRequests() : renderExpenses();
     body += '<div class="foot"><div class="trailrow" aria-hidden="true"><i></i>' + DUCKS('pair', 22) + '</div><span class="tag">We plan. You just follow.</span><span>' + esc(refreshedText()) + (LIVE ? ' · Pull down to refresh' : '') + '</span></div>';
     view.innerHTML = body;
+    document.getElementById('group-dot').hidden = !needsMyVote();
+    drawChat();
   }
+  // old links: #trip was the Trip tab (now Bookings), #inbox the inbox (now Messages)
   function fromHash() {
     var h = (location.hash || '').replace('#', '');
-    state.tab = (h === 'trip' || h === 'expenses' || h === 'inbox') ? h : 'plan';
+    if (h === 'trip') h = 'bookings';
+    if (h === 'inbox') h = 'requests';
+    state.tab = TABS.indexOf(h) > -1 || h === 'requests' ? h : 'plan';
   }
   function pickDay() {
     var today = tokyoToday();
@@ -1317,30 +1727,65 @@ function startApp(DATA) {
   }
 
   function goTab(t) {
+    if (t === 'requests' && state.tab !== 'requests') state.from = state.tab;
+    if (t !== 'requests') state.toast = '';
     state.tab = t;
     try { history.replaceState(null, '', '#' + t); } catch (err) {}
     render(); window.scrollTo(0, 0);
   }
   document.addEventListener('click', function (e) {
-    var nav = e.target.closest('nav.tabbar a, #tab-inbox');
+    var nav = e.target.closest('nav.tabbar a');
     if (nav) { e.preventDefault(); goTab(nav.getAttribute('href').slice(1)); return; }
+    if (e.target.closest('#chat-hist')) { e.preventDefault(); goTab(state.tab === 'requests' ? (state.from || 'plan') : 'requests'); return; }
+    var go = e.target.closest('[data-go]');
+    if (go) { e.preventDefault(); goTab(go.getAttribute('data-go')); return; }
     var b = e.target.closest('[data-day]');
     if (b) { state.day = b.getAttribute('data-day'); store(SK + 'day', state.day); store(SK + 'day-set', tokyoToday()); render(); window.scrollTo(0, 0); return; }
     var g = e.target.closest('[data-goto]');
     if (g && g.getAttribute('data-goto')) { state.day = g.getAttribute('data-goto'); store(SK + 'day', state.day); store(SK + 'day-set', tokyoToday()); goTab('plan'); return; }
     var me = e.target.closest('[data-me]');
-    if (me) { state.me = me.getAttribute('data-me'); store(SK + 'me', state.me); render(); return; }
-    if (e.target.closest('[data-me-change]')) { state.me = null; render(); return; }
+    if (me) {
+      if (meOk()) return;  // already set on this phone: locked
+      var nm = me.getAttribute('data-me'), send = me.hasAttribute('data-me-send') ? ' data-me-send="1"' : '';
+      sheetOpen('<h3>You are ' + esc(nm) + '?</h3><p class="hint">Everything sent from this phone will be under <b>' + esc(nm) + '</b>, and it can\'t be changed afterwards.</p>' +
+        '<button type="button" class="btn primary" style="justify-content:center;min-height:44px;cursor:pointer" data-me-ok="' + esc(nm) + '"' + send + '>Yes, I\'m ' + esc(nm) + '</button>' +
+        '<button type="button" class="linkbtn" data-sheet-close style="align-self:flex-start">Back</button>');
+      return;
+    }
+    var mo = e.target.closest('[data-me-ok]');
+    if (mo) {
+      if (!meOk()) { state.me = mo.getAttribute('data-me-ok'); store(SK + 'me', state.me); }
+      sheetClose(); render();
+      if (mo.hasAttribute('data-me-send')) sendDraft();
+      return;
+    }
+    if (e.target.closest('[data-sheet-close]') || e.target.id === 'sheet') { sheetClose(); return; }
     var rr = e.target.closest('[data-ibx-re]');
-    if (rr) { state.replyTo = Number(rr.getAttribute('data-ibx-re')) || 0; render(); window.scrollTo(0, 0); var t = document.getElementById('ibx-text'); if (t) t.focus(); return; }
-    if (e.target.closest('[data-ibx-cancel]')) { state.replyTo = 0; render(); return; }
+    if (rr) { state.replyTo = Number(rr.getAttribute('data-ibx-re')) || 0; drawChat(); var t = document.getElementById('chat-text'); if (t) t.focus(); return; }
+    if (e.target.closest('[data-ibx-cancel]')) { state.replyTo = 0; drawChat(); return; }
     var s = e.target.closest('[data-settle]');
     if (s) { state.settle = s.getAttribute('data-settle'); store(SK + 'settle', state.settle); render(); return; }
     var sb = e.target.closest('[data-shares]');
     if (sb) { state.shares = sb.getAttribute('data-shares'); store(SK + 'shares', state.shares); render(); return; }
+    var rq = e.target.closest('[data-req]');
+    if (rq) { state.reqFilter = rq.getAttribute('data-req'); render(); return; }
+    var ab = e.target.closest('[data-ask]');
+    if (ab) { state.ask = !state.ask; drawChat(); return; }
+    var ac = e.target.closest('[data-ask-close]');
+    if (ac) { state.askClose = ac.getAttribute('data-ask-close'); drawChat(); return; }
+    var vb = e.target.closest('[data-vote]');
+    if (vb) { sendVote('castVote', vb.getAttribute('data-vote'), Number(vb.getAttribute('data-choice'))); return; }
+    if (e.target.closest('[data-chg-all]')) { state.chgAll = !state.chgAll; render(); return; }
     if (e.target.closest('[data-tx-all]')) { state.txAll = !state.txAll; render(); return; }
     var tb = e.target.closest('[data-theme-set]');
     if (tb) { if (window.__setTheme) window.__setTheme(tb.getAttribute('data-theme-set')); render(); return; }
+    var cp = e.target.closest('[data-copy]');
+    if (cp) {
+      var txt = cp.getAttribute('data-copy'), lab = cp.lastChild;
+      var done = function () { var was = lab.textContent; lab.textContent = 'Copied'; setTimeout(function () { lab.textContent = was; }, 1600); };
+      try { navigator.clipboard.writeText(txt).then(done, function () {}); } catch (err) {}
+      return;
+    }
     var cb = e.target.closest('[data-cur]');
     if (cb) { state.cur = cb.getAttribute('data-cur'); store(SK + 'cur', state.cur); render(); return; }
   });
@@ -1353,6 +1798,8 @@ function startApp(DATA) {
   state.me = store(SK + 'me');
   fromHash();
   render();
+  if (CAN_RUN && state.inbox === null) loadInbox();
+  if (CAN_RUN && state.votes === null) loadVotes();
 
   /* ---------- pull down to refresh ---------- */
   window.__tripApp = {
@@ -1362,7 +1809,7 @@ function startApp(DATA) {
       DATA = nd; days = DATA.plan.days; LIVE = DATA.mode === 'live';
       document.getElementById('sub').textContent = '';
       if (!days.some(function (d) { return d.date === state.day; })) state.day = pickDay();
-      if (state.tab === 'inbox') { state.inboxMsg = ''; loadInbox(); }
+      if (CAN_RUN) { state.toast = ''; inboxLoading = false; loadInbox(); votesLoading = false; loadVotes(); }
       var y = window.scrollY; render(); window.scrollTo(0, y);
     }
   };

@@ -1,6 +1,6 @@
 // Runs the Apps Script backend (app/appscript/*.js) in Node against in-memory fakes of Google's services.
 // No network, no real files: checks the Trips sheet reading, the Members sheet, sessions, the error log
-// and the test-inbox naming. Run: node tests/backend_test.js
+// the test-inbox naming, changes since this morning and group votes. Run: node tests/backend_test.js
 'use strict';
 const fs = require('fs'), path = require('path'), vm = require('vm'), crypto = require('crypto');
 const dir = path.join(__dirname, '..', 'app', 'appscript');
@@ -41,6 +41,10 @@ function makeWorld(props) {
           const rows = files[id].tabs[tab];
           if (!rows) throw new Error('Unable to parse range: ' + range);
           if (a1 === '1:1') return { values: rows.slice(0, 1) };
+          const box = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(a1);
+          const cols = /^([A-Z]+)(\d+):([A-Z]+)$/.exec(a1);
+          if (cols) return { values: rows.slice(Number(cols[2]) - 1).map(r => r.slice(colIndex(cols[1]), colIndex(cols[3]) + 1)) };
+          if (box) return { values: rows.slice(Number(box[2]) - 1, Number(box[4])).map(r => r.slice(colIndex(box[1]), colIndex(box[3]) + 1)) };
           return { values: rows.map(r => r.slice()) };
         },
         update(body, id, range) { setCells(id, range, body.values); },
@@ -146,6 +150,87 @@ function tripsSheet(world, withOrganiser) {
   check(!!threw && !w.props.MEMBERS_SHEET, 'testMembers refuses to run on the live backend');
   w.ctx.warmUp();
   check(!w.props.MEMBERS_SHEET, 'warmUp never creates the Members sheet');
+}
+
+// 4. Changes since this morning (Changes.js): snapshot per trip per day in script property SNAP_<key>
+{
+  const w = makeWorld({});
+  const trip = { key: 't-one', tz: 'Asia/Tokyo' };
+  const item = (time, name, extra) => Object.assign({ time, name, kind: 'Activity', info: [], details: [], notes: [], backups: [] }, extra || {});
+  const mk = (items, exp) => ({ plan: { days: [{ date: '2026-11-16', items }] }, expenses: { recent: exp || [] } });
+  const morning = mk([item('12:30', 'Lunch at Seaside Cafe'), item('14:00', 'Hello Kitty Show Box'), item('18:00', 'Kobe Gyu Ramen'), item('20:00', 'Night walk')],
+    [{ date: '16 Nov 2026', desc: 'Petrol', amount: 6130, currency: 'JPY', paid_by: 'TMN' }]);
+  let c = w.ctx.applyChanges_(trip, JSON.parse(JSON.stringify(morning)), '2026-11-16', '07:05');
+  check(c.list.length === 0 && !!w.props['SNAP_t-one'], 'first read of the day keeps a snapshot and shows no changes');
+  check(w.props['SNAP_t-one'].length < 2000, 'snapshot is small (' + w.props['SNAP_t-one'].length + ' bytes)');
+  const later = mk([item('12:30', 'Lunch at Seaside Cafe', { notes: [{ segs: [{ t: 'Window seats' }] }] }), item('14:00', 'Strawberry farm'), item('19:00', 'Kobe Gyu Ramen'), item('21:00', 'Onsen')],
+    [{ date: '16 Nov 2026', desc: 'Petrol', amount: 6130, currency: 'JPY', paid_by: 'TMN' }, { date: '16 Nov 2026', desc: 'Lunch', amount: 3200, currency: 'JPY', paid_by: 'KA' }]);
+  c = w.ctx.applyChanges_(trip, JSON.parse(JSON.stringify(later)), '2026-11-16', '10:12');
+  const kinds = c.list.map(x => x.kind).sort().join(',');
+  check(kinds === 'added,edited,expense,moved,removed,replaced', 'moved, edited, replaced, added, removed and expense are found (' + kinds + ')');
+  const mv = c.list.find(x => x.kind === 'moved');
+  check(mv && mv.text === 'Kobe Gyu Ramen moved 18:00 → 19:00' && mv.at === '10:12', 'a move reads "moved 18:00 → 19:00" and is stamped 10:12');
+  check(c.list.find(x => x.kind === 'expense').text === 'JPY 3,200 Lunch logged, paid by KA', 'a new expense is listed');
+  c = w.ctx.applyChanges_(trip, JSON.parse(JSON.stringify(later)), '2026-11-16', '11:30');
+  check(c.list.every(x => x.at === '10:12'), 'a change keeps the time it was first seen');
+  c = w.ctx.applyChanges_(trip, JSON.parse(JSON.stringify(morning)), '2026-11-16', '12:00');
+  check(c.list.length === 0, 'undoing the edits clears the list');
+  c = w.ctx.applyChanges_(trip, JSON.parse(JSON.stringify(later)), '2026-11-17', '07:00');
+  check(c.list.length === 0, 'the next morning starts clean');
+  // a broken property never stops the trip from opening
+  w.props['SNAP_t-one'] = '{not json';
+  const d = JSON.parse(JSON.stringify(later));
+  w.ctx.addChanges_(trip, d);
+  check(d.changes && d.changes.list.length === 0, 'a damaged snapshot is replaced, the read still works');
+}
+
+// 5. Group votes (Votes.js): the request waits in the inbox as Voting; most votes wins; a tie goes to the organiser in the inbox
+{
+  const w = makeWorld({ APP_ENV: 'test' });
+  tripsSheet(w, false);
+  w.ctx.setupMembers();
+  const mid = w.props.MEMBERS_SHEET, M = w.files[mid].tabs;
+    w.ctx.postInbox('t-one', '1111', 'MW', 'Lunch 2000 yen paid by MW', 0);
+  let r = JSON.parse(w.ctx.startVote('t-one', '1111', 'KA', 'Swap dinner for sushi', 'hour'));
+  const inbox = w.files[w.props['INBOX_t-one']].tabs.Inbox;
+  const row = r.inbox.find(m => m.text === 'Swap dinner for sushi');
+  check(row && row.status === 'Voting' && /voting until/.test(row.reply), 'the request lands in the inbox as Voting');
+  check(M.Votes[0].includes('Inbox row') && M.Ballots[0].includes('Name') && M.Votes[0].indexOf('Inbox row') === 9, '"Inbox row" and "Name" columns are added at the end');
+  const vid = r.vote;
+  const col = h => M.Votes[0].indexOf(h), vrow = id => M.Votes.find(x => x[0] === id);
+  check(Number(vrow(vid)[col('Inbox row')]) === row.row, 'the vote points at its inbox row');
+  w.ctx.castVote('t-one', '1111', vid, 'KA', 1);
+  w.ctx.castVote('t-one', '1111', vid, 'KA', 0);  // changed their mind: replaces the first ballot
+  w.ctx.castVote('t-one', '1111', vid, 'TMN', 0);
+  let g = JSON.parse(w.ctx.castVote('t-one', '1111', vid, 'MW', 1));
+  const gv = g.votes.find(v => v.id === vid);
+  check(gv.counts.join() === '2,1' && gv.voters.length === 3, 'votes are counted, one per name (' + gv.counts.join() + ')');
+  w.ctx.closeVotes();
+  check(vrow(vid)[col('Status')] === 'Open' && inbox[row.row - 1][3] === 'Voting', 'a vote stays open until its closing time');
+  vrow(vid)[col('Closes')] = new Date(Date.now() - 60e3).toISOString();
+  w.ctx.closeVotes();
+  check(vrow(vid)[col('Status')] === 'Decided', 'the trigger closes a vote on time');
+  check(inbox[row.row - 1][3] === 'Waiting' && inbox[row.row - 1][4] === 'Group vote: 2 yes, 1 no.', 'yes wins: the inbox row becomes Waiting for the next run');
+  check(inbox[1][3] === 'Waiting' && inbox[1][4] === '' && inbox[1][2] === 'Lunch 2000 yen paid by MW', 'other inbox rows are untouched');
+  const late = JSON.parse(w.ctx.doPost({ postData: { contents: JSON.stringify({ fn: 'castVote', args: ['t-one', '1111', vid, 'KA', 1] }) } }).text);
+  check(late.ok === false && late.error === 'closed', 'voting after the close is refused ("closed")');
+  // a tie
+  r = JSON.parse(w.ctx.startVote('t-one', '1111', 'MW', 'Skip the aquarium', 'tonight'));
+  const tid = r.vote, trow = r.inbox.find(m => m.text === 'Skip the aquarium').row;
+  w.ctx.castVote('t-one', '1111', tid, 'KA', 0);
+  w.ctx.castVote('t-one', '1111', tid, 'MW', 1);
+  vrow(tid)[col('Closes')] = new Date(Date.now() - 60e3).toISOString();
+  g = JSON.parse(w.ctx.getVotes('t-one', '1111'));
+  check(g.votes.find(v => v.id === tid).status === 'Tie' && inbox[trow - 1][3] === 'Needs JY' && /organiser decides/i.test(inbox[trow - 1][4]),
+    'a tie goes to the organiser in the inbox (Needs JY): ' + inbox[trow - 1].slice(3, 5).join(' / '));
+  check(!('decideVote' in w.ctx.API_FNS), 'nobody can decide a tie from the app by picking a name');
+  inbox[trow - 1][3] = 'Skipped';  // the organiser decides in the inbox
+  g = JSON.parse(w.ctx.getVotes('t-one', '1111'));
+  const tv = g.votes.find(v => v.id === tid);
+  check(tv.status === 'Decided' && /^No, keep the plan \(organiser decided/.test(tv.result), 'the organiser\'s pick in the inbox closes the vote');
+  let threw = null;
+  try { w.ctx.startVote('t-one', '9999', 'KA', 'x', 'hour'); } catch (e) { threw = e; }
+  check(threw && /wrong/.test(threw.message), 'votes need the trip PIN');
 }
 
 console.log(fails ? '\n' + fails + ' failed' : '\nall passed');
