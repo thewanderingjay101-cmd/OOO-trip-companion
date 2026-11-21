@@ -200,9 +200,13 @@ var API_FNS = {
   openTrip: function (a) { return openTrip(a[0], a[1], a[2], a[3] === true); },  // never 'cache' from outside
   refreshTrip: function (a) { return refreshTrip(a[0], a[1]); },
   getInbox: function (a) { return getInbox(a[0], a[1]); },
-  postInbox: function (a) { return postInbox(a[0], a[1], a[2], a[3], a[4]); }
+  postInbox: function (a) { return postInbox(a[0], a[1], a[2], a[3], a[4]); },
+  getVotes: function (a) { return getVotes(a[0], a[1]); },
+  startVote: function (a) { return startVote(a[0], a[1], a[2], a[3], a[4]); },
+  castVote: function (a) { return castVote(a[0], a[1], a[2], a[3], a[4]); },
+  decideVote: function (a) { return decideVote(a[0], a[1], a[2], a[3], a[4]); }
 };
-var API_ERRORS = ['needpin', 'wrong', 'locked', 'setup', 'busy', 'empty'];
+var API_ERRORS = ['needpin', 'wrong', 'locked', 'setup', 'busy', 'empty', 'closed'];
 
 function doPost(e) {
   var out, req = null;
@@ -415,7 +419,8 @@ function getTripData_(trip, fresh, fast) {
  * someone writes (the drive.file scope only lets the script write to files it created itself,
  * so the itinerary doc and expense sheet stay read-only). Its id is kept in script property INBOX_<key>.
  * Columns: Time | From | Message | Status | Reply | Done at | Re. Status starts as "Waiting".
- * Status: Waiting, Done, Pending (Claude asks a question in Reply), Skipped. Reply is left empty
+ * Status: Waiting, Done, Pending (Claude asks a question in Reply), Skipped, Voting (a group vote is open, see
+ * Votes.js; the scheduled run leaves it alone). Reply is left empty
  * unless a question is needed. Re holds the row number of the Pending message an answer replies to.
  */
 var INBOX_RANGE = 'Inbox!A1:G';

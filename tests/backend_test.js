@@ -1,6 +1,6 @@
 // Runs the Apps Script backend (app/appscript/*.js) in Node against in-memory fakes of Google's services.
 // No network, no real files: checks the Trips sheet reading, the Members sheet, sessions, the error log
-// and the test-inbox naming. Run: node tests/backend_test.js
+// the test-inbox naming, changes since this morning and group votes. Run: node tests/backend_test.js
 'use strict';
 const fs = require('fs'), path = require('path'), vm = require('vm'), crypto = require('crypto');
 const dir = path.join(__dirname, '..', 'app', 'appscript');
@@ -41,6 +41,8 @@ function makeWorld(props) {
           const rows = files[id].tabs[tab];
           if (!rows) throw new Error('Unable to parse range: ' + range);
           if (a1 === '1:1') return { values: rows.slice(0, 1) };
+          const box = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(a1);
+          if (box) return { values: rows.slice(Number(box[2]) - 1, Number(box[4])).map(r => r.slice(colIndex(box[1]), colIndex(box[3]) + 1)) };
           return { values: rows.map(r => r.slice()) };
         },
         update(body, id, range) { setCells(id, range, body.values); },
@@ -178,6 +180,57 @@ function tripsSheet(world, withOrganiser) {
   const d = JSON.parse(JSON.stringify(later));
   w.ctx.addChanges_(trip, d);
   check(d.changes && d.changes.list.length === 0, 'a damaged snapshot is replaced, the read still works');
+}
+
+// 5. Group votes (Votes.js): the request waits in the inbox as Voting; most votes wins; a tie waits for the organiser
+{
+  const w = makeWorld({ APP_ENV: 'test' });
+  tripsSheet(w, false);
+  w.ctx.setupMembers();
+  const mid = w.props.MEMBERS_SHEET, M = w.files[mid].tabs;
+  M['Trip settings'].push(['t-one', 'Organiser name', 'TMN', '', '']);
+  w.ctx.postInbox('t-one', '1111', 'MW', 'Lunch 2000 yen paid by MW', 0);
+  let r = JSON.parse(w.ctx.startVote('t-one', '1111', 'KA', 'Swap dinner for sushi', 'hour'));
+  const inbox = w.files[w.props['INBOX_t-one']].tabs.Inbox;
+  const row = r.inbox.find(m => m.text === 'Swap dinner for sushi');
+  check(row && row.status === 'Voting' && /voting until/.test(row.reply), 'the request lands in the inbox as Voting');
+  check(M.Votes[0].includes('Inbox row') && M.Ballots[0].includes('Name') && M.Votes[0].indexOf('Inbox row') === 9, '"Inbox row" and "Name" columns are added at the end');
+  const vid = r.vote;
+  const col = h => M.Votes[0].indexOf(h), vrow = id => M.Votes.find(x => x[0] === id);
+  check(Number(vrow(vid)[col('Inbox row')]) === row.row, 'the vote points at its inbox row');
+  w.ctx.castVote('t-one', '1111', vid, 'KA', 1);
+  w.ctx.castVote('t-one', '1111', vid, 'KA', 0);  // changed their mind: replaces the first ballot
+  w.ctx.castVote('t-one', '1111', vid, 'TMN', 0);
+  let g = JSON.parse(w.ctx.castVote('t-one', '1111', vid, 'MW', 1));
+  const gv = g.votes.find(v => v.id === vid);
+  check(gv.counts.join() === '2,1' && gv.voters.length === 3 && g.organiser === 'TMN', 'votes are counted, one per name (' + gv.counts.join() + ')');
+  w.ctx.closeVotes();
+  check(vrow(vid)[col('Status')] === 'Open' && inbox[row.row - 1][3] === 'Voting', 'a vote stays open until its closing time');
+  vrow(vid)[col('Closes')] = new Date(Date.now() - 60e3).toISOString();
+  w.ctx.closeVotes();
+  check(vrow(vid)[col('Status')] === 'Decided', 'the trigger closes a vote on time');
+  check(inbox[row.row - 1][3] === 'Waiting' && inbox[row.row - 1][4] === 'Group vote: 2 yes, 1 no.', 'yes wins: the inbox row becomes Waiting for the next run');
+  check(inbox[1][3] === 'Waiting' && inbox[1][4] === '' && inbox[1][2] === 'Lunch 2000 yen paid by MW', 'other inbox rows are untouched');
+  const late = JSON.parse(w.ctx.doPost({ postData: { contents: JSON.stringify({ fn: 'castVote', args: ['t-one', '1111', vid, 'KA', 1] }) } }).text);
+  check(late.ok === false && late.error === 'closed', 'voting after the close is refused ("closed")');
+  // a tie
+  r = JSON.parse(w.ctx.startVote('t-one', '1111', 'MW', 'Skip the aquarium', 'tonight'));
+  const tid = r.vote, trow = r.inbox.find(m => m.text === 'Skip the aquarium').row;
+  w.ctx.castVote('t-one', '1111', tid, 'KA', 0);
+  w.ctx.castVote('t-one', '1111', tid, 'MW', 1);
+  vrow(tid)[col('Closes')] = new Date(Date.now() - 60e3).toISOString();
+  g = JSON.parse(w.ctx.getVotes('t-one', '1111'));
+  check(g.votes.find(v => v.id === tid).status === 'Tie' && inbox[trow - 1][3] === 'Voting' && /organiser decides/.test(inbox[trow - 1][4]),
+    'a tie waits for the organiser (inbox row stays Voting)');
+  let threw = null;
+  try { w.ctx.decideVote('t-one', '1111', tid, 'KA', 0); } catch (e) { threw = e; }
+  check(threw && /wrong/.test(threw.message) && vrow(tid)[col('Status')] === 'Tie', 'only the organiser can decide a tie');
+  w.ctx.decideVote('t-one', '1111', tid, 'TMN', 1);
+  check(vrow(tid)[col('Status')] === 'Decided' && inbox[trow - 1][3] === 'Skipped' && /TMN decided the tie/.test(inbox[trow - 1][4]),
+    'the organiser\'s pick closes it: no wins, the row becomes Skipped');
+  threw = null;
+  try { w.ctx.startVote('t-one', '9999', 'KA', 'x', 'hour'); } catch (e) { threw = e; }
+  check(threw && /wrong/.test(threw.message), 'votes need the trip PIN');
 }
 
 console.log(fails ? '\n' + fails + ' failed' : '\nall passed');
