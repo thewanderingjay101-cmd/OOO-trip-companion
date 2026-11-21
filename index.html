@@ -12,6 +12,7 @@
 <meta name="robots" content="noindex">
 <link rel="apple-touch-icon" href="just-follow-180.png">
 <link rel="icon" type="image/png" href="just-follow-512.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
 <title>Just Follow</title>
@@ -1469,7 +1470,7 @@ function startApp(DATA) {
   // Add to Home Screen steps (Trip tab and the ?setup=1 screen)
   var SHARE_IC = '<svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Share"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
   var HS_IPHONE = '<b>iPhone:</b> in Safari, tap Share ' + SHARE_IC + ', then <b>Add to Home Screen</b> and <b>Add</b>.';
-  var HS_ANDROID = '<b>Android:</b> in Chrome, tap the menu <b>⋮</b>, then <b>Add to Home screen</b>.';
+  var HS_ANDROID = '<b>Android:</b> in Chrome, tap the menu <b>⋮</b>, then <b>Add to Home screen</b> (it may say <b>Install app</b>). It is named Just Follow.';
   window.__oooHsHow = HS_IPHONE + '<br>' + HS_ANDROID;
   // App icon (mother duck and duckling on night ink) drawn inline (no image request, so it can't show as a broken image)
   var LOGO = '<svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" fill="#1B2340"/><g transform="translate(35 113) scale(4.6)">' +

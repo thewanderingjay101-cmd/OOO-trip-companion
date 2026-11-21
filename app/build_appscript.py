@@ -63,9 +63,22 @@ HEAD = '''<!doctype html>
 <meta name="robots" content="noindex">
 <link rel="apple-touch-icon" href="just-follow-180.png">
 <link rel="icon" type="image/png" href="just-follow-512.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://script.google.com">
 <link rel="preconnect" href="https://script.googleusercontent.com">
 '''
+
+
+def manifest(name, icons):
+    # Android (Chrome, Samsung Internet) names and draws the Home screen icon from this file; without it Chrome
+    # showed the site address as the name. No start_url on purpose: the icon then opens the page it was added
+    # from, so the ?ks= / ?trip=&k= keys stay in the link (iPhone needs them; see README "Home Screen").
+    return json.dumps({
+        'name': name, 'short_name': name, 'display': 'standalone',
+        'background_color': '#FCFAF6', 'theme_color': '#FCFAF6',
+        'icons': [{'src': icons + 'just-follow-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any'},
+                  {'src': icons + 'just-follow-180.png', 'sizes': '180x180', 'type': 'image/png', 'purpose': 'any'}],
+    }, indent=2) + '\n'
 
 
 def pages(api):
@@ -76,6 +89,7 @@ def pages(api):
 
 live = pages(APP_URL)
 write('index.html', live)
+write('manifest.webmanifest', manifest('Just Follow', ''))
 
 # Beta page: same app, test backend. It lives on the same origin as the live page, so its device storage
 # is kept apart with a "jfbeta:" prefix (otherwise testing would overwrite saved trips and keys of the live app).
@@ -105,6 +119,7 @@ if BETA_URL:
     beta = beta.replace('<title>Just Follow</title>', '<title>Just Follow Beta</title>', 1)
     beta = beta.replace('<link rel="preconnect" href="https://script.google.com">', BETA_SHIM + '<link rel="preconnect" href="https://script.google.com">', 1)
     beta = beta.replace('\n</html>\n', '\n<div id="jf-beta">BETA · TEST DATA</div>\n</html>\n')
+    write('beta/manifest.webmanifest', manifest('JF Beta', '../'))
 else:
     beta = '''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">

@@ -30,7 +30,7 @@ def node_check(code, label):
 
 with tempfile.TemporaryDirectory() as tmp:
     subprocess.run([sys.executable, '-I', build, '--out', tmp], check=True, capture_output=True)
-    for rel in ['index.html', 'app/appscript/Index.html', 'beta/index.html']:
+    for rel in ['index.html', 'app/appscript/Index.html', 'beta/index.html', 'manifest.webmanifest', 'beta/manifest.webmanifest']:
         check(read(tmp, rel) == read(root, rel), rel + ' is up to date with the template (run app/build_appscript.py)')
 
     live = read(root, 'index.html')
