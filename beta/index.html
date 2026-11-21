@@ -519,12 +519,9 @@ function startApp(DATA) {
   document.getElementById('days').hidden = false;
   document.querySelector('nav.tabbar').hidden = false;
   document.getElementById('tab-inbox').hidden = false;
-  var META = DATA.meta || { key: 'kansai', name: 'Kansai', tz: 'Asia/Tokyo', place: 'Japan',
-    doc: '1STew5l6lSxAJblXiEvOSOIUPHnDt4h-i5Qbr2QaaDrA', sheet: '1tXs9Z_JIYoM-ZyhDhBnvRXeW4fBxh99AKVnKLn8wzLs' };
-  var TZ = META.tz || 'Asia/Tokyo';
+  var META = DATA.meta || { key: 'trip', name: 'Trip', tz: 'Asia/Singapore', place: '' };
+  var TZ = META.tz || 'Asia/Singapore';
   var PLACE_TIME = (META.place ? META.place : 'local') + ' time';
-  var DOC_URL = 'https://docs.google.com/document/d/' + META.doc + '/edit';
-  var SHEET_URL = 'https://docs.google.com/spreadsheets/d/' + META.sheet + '/edit';
   var SK = 'trip-' + META.key + '-';
   var days = DATA.plan.days;
   var LIVE = DATA.mode === 'live';
